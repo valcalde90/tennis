@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a1628">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Tennis Tracker · Berimbau</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a1628;--panel:#0f2035;--line:rgba(255,255,255,.06);--line2:rgba(255,255,255,.1);--tx:#e8e6e1;--tx2:#c8c6c1;--mut:#6b7b8d;--mut2:#8b95a5;--dim:#4a5568;--teal:#2dd4bf;--red:#f87171;--amber:#f59e0b;--purp:#a78bfa;--purp2:#c4b5fd}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--tx);font-family:'DM Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;min-height:100vh}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#1e3050;border-radius:4px}
+.topline{position:fixed;top:0;left:0;right:0;height:3px;z-index:50;background:linear-gradient(90deg,#2dd4bf 0%,#2dd4bf 25%,#f59e0b 25%,#f59e0b 50%,#a78bfa 50%,#a78bfa 75%,#f87171 75%,#f87171 100%)}
+header{padding:22px 20px 14px;background:linear-gradient(180deg,#0f2035 0%,#0a1628 100%);border-bottom:1px solid var(--line);margin-top:3px}
+.hrow{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#2dd4bf,#14b8a6);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+h1{font-size:18px;font-family:'Playfair Display',Georgia,serif;font-weight:700;letter-spacing:-.02em;line-height:1}
+.sub{font-size:10px;color:var(--mut);font-weight:500;letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
+.hbtns{margin-left:auto;display:flex;gap:6px}
+.hbtn{padding:6px 10px;font-size:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:var(--mut);cursor:pointer;font-family:inherit;font-weight:500}
+nav{display:flex;gap:4px;flex-wrap:wrap}
+.navbtn{padding:7px 13px;font-size:11px;font-weight:400;background:transparent;color:var(--mut);border:none;border-radius:6px;cursor:pointer;font-family:inherit;letter-spacing:.02em}
+.navbtn.on{background:rgba(255,255,255,.08);color:#fff;font-weight:600}
+.navbtn.add{background:rgba(45,212,191,.08);color:var(--teal);border:1px solid rgba(45,212,191,.2)}
+.navbtn.add.on{background:rgba(255,255,255,.08);color:#fff;border:none}
+main{padding:20px;max-width:800px;margin:0 auto;animation:fu .4s ease both}
+@keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.lbl{font-size:11px;color:var(--mut);font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px}
+.sc{padding:14px 16px;background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:10px}
+.sc.sm{padding:10px 12px}
+.sc .l{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;font-weight:500;margin-bottom:4px}
+.sc .v{font-size:20px;font-weight:700}
+.sc.sm .v{font-size:16px}
+.sc .s{font-size:10px;color:var(--mut);margin-top:2px}
+.mr{display:flex;align-items:center;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;transition:background .2s}
+.mr:active{background:rgba(255,255,255,.04)}
+.wl{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-right:12px;flex-shrink:0}
+.wl.w{background:rgba(45,212,191,.12);color:var(--teal)}.wl.l{background:rgba(248,113,113,.12);color:var(--red)}.wl.f{background:rgba(167,139,250,.12);color:var(--purp)}
+.mtop{font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.msub{font-size:11px;color:var(--mut)}
+.badge{font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(167,139,250,.15);color:var(--purp);font-weight:600;text-transform:uppercase}
+.score{font-size:13px;font-weight:600;font-family:ui-monospace,monospace;letter-spacing:.02em;flex-shrink:0;margin-left:8px}
+.trow{display:flex;align-items:center;width:100%;padding:14px 16px;background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer;text-align:left;color:inherit;font-family:inherit}
+.trow.fri{background:rgba(167,139,250,.04);border-color:rgba(167,139,250,.12)}
+.tcat{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-right:14px;flex-shrink:0}
+.bar{height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
+.barfill{height:100%;border-radius:3px;transition:width .6s ease}
+.inp{width:100%;padding:11px 14px;background:rgba(255,255,255,.04);border:1px solid var(--line2);border-radius:8px;color:var(--tx);font-size:14px;font-family:inherit}
+.inp:focus{outline:none;border-color:rgba(45,212,191,.5)}
+select.inp{appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%236b7b8d' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+select.inp option{background:#0f2035}
+.fld{margin-bottom:14px}
+.flbl{font-size:11px;color:var(--mut);font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;display:block}
+.btn{width:100%;padding:14px;font-size:15px;font-weight:600;border:none;border-radius:10px;cursor:pointer;font-family:inherit;transition:opacity .2s}
+.btn:disabled{background:rgba(255,255,255,.04)!important;color:var(--dim)!important;cursor:not-allowed}
+.btn.teal{background:linear-gradient(135deg,#2dd4bf,#14b8a6);color:#0a1628}
+.btn.amber{background:linear-gradient(135deg,#f59e0b,#d97706);color:#0a1628}
+.seg{padding:5px 10px;font-size:10px;font-weight:400;background:transparent;border:1px solid rgba(255,255,255,.08);border-radius:6px;color:var(--mut);cursor:pointer;font-family:inherit}
+.seg.on{background:rgba(45,212,191,.12);border-color:rgba(45,212,191,.3);color:var(--teal);font-weight:600}
+.tgl{flex:1;padding:11px;font-size:13px;font-weight:600;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:var(--mut);cursor:pointer;font-family:inherit}
+.tgl.won{background:rgba(45,212,191,.15);border:2px solid var(--teal);color:var(--teal)}
+.tgl.lost{background:rgba(248,113,113,.15);border:2px solid var(--red);color:var(--red)}
+.skbtn{width:32px;height:32px;border-radius:8px;border:1px solid var(--line2);background:rgba(255,255,255,.04);color:var(--tx);font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;flex-shrink:0}
+.skbtn:disabled{opacity:.3;cursor:default}
+.modal-back{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--panel);border-radius:14px 14px 0 0;width:100%;max-width:500px;max-height:88vh;overflow:auto;border:1px solid var(--line2);border-bottom:none;padding:20px}
+.handle{width:36px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 16px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid rgba(45,212,191,.3);color:var(--teal);padding:10px 20px;border-radius:8px;font-size:13px;font-weight:500;z-index:300;box-shadow:0 8px 30px rgba(0,0,0,.5);animation:fu .3s ease}
+.back{font-size:12px;color:var(--mut);background:none;border:none;cursor:pointer;margin-bottom:16px;font-family:inherit;display:flex;align-items:center;gap:4px}
+.pill{font-size:10px;padding:2px 8px;border-radius:4px;border:none}
+h2.tname{font-size:20px;font-family:'Playfair Display',Georgia,serif;font-weight:600;margin-bottom:4px}
+.arc{padding:16px 20px;border-radius:12px;margin-bottom:12px}
+textarea.inp{min-height:140px;font-size:11px;font-family:ui-monospace,monospace;resize:vertical}
+.step{display:flex;gap:12px;align-items:flex-start;margin-bottom:8px}
+.stepn{width:22px;height:22px;border-radius:50%;background:rgba(45,212,191,.1);color:var(--teal);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="topline"></div>
+<header>
+  <div class="hrow">
+    <div class="logo">🎾</div>
+    <div>
+      <h1>Tennis Tracker</h1>
+      <div class="sub">Club Berimbau · Singles</div>
+    </div>
+    <div class="hbtns">
+      <button class="hbtn" onclick="openExport()">📤 CSV</button>
+      <button class="hbtn" onclick="openImport()">📥 Importar</button>
+    </div>
+  </div>
+  <nav id="nav"></nav>
+</header>
+<main id="main"></main>
+<div id="modal-root"></div>
+<script>
+"use strict";
+/* ============ SEED DATA (v10 — 26 partidos) ============ */
+const SEED = [
+  { id:"f1", name:"Partidos Amistosos", category:"AMI", venue:"Club Berimbau", format:"Singles amistosos", status:"En curso", friendly:true, matches:[] },
+];
+const DEFAULT_SKILLS = { sacPlano:5, sacSlice:5, sacKick:5, dhTopspin:5, dhPlano:5, revSlice:5, revTopspin:5, volea:5, globo:5, dropshot:5, approach:5, footwork:5, mentalidad:5 };
+const LS_PLAYER = "tt-player-v1";
+const DEFAULT_PLAYER = { name:"Jugador", age:"", hand:"Diestro" };
+const CC = { C:"#2dd4bf", B:"#f59e0b", AMI:"#a78bfa", A:"#f472b6" };
+const LS_DATA = "tt-data-v1", LS_SKILLS = "tt-skills-v1";
+
+/* ============ PURE HELPERS ============ */
+function parseScore(score){
+  const sets = score.split(",").map(s=>s.trim());
+  let gw=0,gl=0,sw=0,sl=0;
+  sets.forEach(set=>{
+    const p=set.split("-").map(Number);
+    if(!isNaN(p[0])&&!isNaN(p[1])){ gw+=p[0]; gl+=p[1]; if(p[0]>p[1])sw++; else sl++; }
+  });
+  return {gamesWon:gw,gamesLost:gl,setsWon:sw,setsLost:sl};
+}
+function parseSets(score){
+  return score.split(",").map(s=>s.trim()).map(set=>{
+    const p=set.split("-").map(Number); return {my:p[0],op:p[1]};
+  }).filter(s=>!isNaN(s.my)&&!isNaN(s.op));
+}
+function fmtDate(d){
+  const mo=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+  const dt=new Date(d+"T12:00:00");
+  return dt.getDate()+" "+mo[dt.getMonth()]+" "+dt.getFullYear();
+}
+function esc(s){ return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function initials(n){ const w=String(n||"").trim().split(/\s+/).filter(Boolean); if(!w.length)return "🎾"; return (w[0][0]+(w[1]?w[1][0]:"")).toUpperCase(); }
+function csvEsc(v){ const s=String(v??""); return (s.includes("|")||s.includes('"')||s.includes("\n")) ? '"'+s.replace(/"/g,'""')+'"' : s; }
+function csvUnesc(v){ let s=String(v??"").trim(); if(s.startsWith('"')&&s.endsWith('"')){ s=s.slice(1,-1).replace(/""/g,'"'); } return s; }
+function generateCSV(tournaments){
+  const headers=["Fecha","Torneo","Categoría","Tipo","Ronda","Rival","Marcador","Resultado","Sets W","Sets L","Games W","Games L"];
+  const rows=[];
+  tournaments.forEach(t=>{ t.matches.forEach(m=>{
+    const s=parseScore(m.score);
+    rows.push([m.date, t.name, t.friendly?"Amistoso":("Clase "+t.category), t.friendly?"Amistoso":"Competitivo", m.round||"—", m.opponent, m.score, m.won?"Victoria":"Derrota", s.setsWon, s.setsLost, s.gamesWon, s.gamesLost]);
+  });});
+  rows.sort((a,b)=>String(a[0]).localeCompare(String(b[0])));
+  return [headers.map(csvEsc).join("|")].concat(rows.map(r=>r.map(csvEsc).join("|"))).join("\n");
+}
+function parseCSVImport(text, existingTournaments){
+  const lines=text.trim().split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
+  const dataLines=lines.filter(l=>!l.toLowerCase().startsWith("fecha|"));
+  const errors=[];
+  const rows=[];
+  dataLines.forEach((l,i)=>{
+    const cols=l.split("|").map(csvUnesc);
+    if(cols.length<8){ errors.push("Línea "+(i+1)+": columnas insuficientes"); return; }
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(cols[0])){ errors.push("Línea "+(i+1)+": fecha inválida '"+cols[0]+"'"); return; }
+    rows.push({ date:cols[0], tName:cols[1], cat:cols[2], tipo:cols[3], round:cols[4]||"—", opponent:cols[5], score:cols[6], won:cols[7].trim()==="Victoria" });
+  });
+  if(!rows.length){ return {ok:false, errors: errors.length?errors:["No se encontraron filas válidas"]}; }
+  const byName={}; const order=[];
+  rows.forEach(r=>{ if(!byName[r.tName]){ byName[r.tName]=[]; order.push(r.tName); } byName[r.tName].push(r); });
+  let mc=0;
+  const tournaments=order.map((name,ti)=>{
+    const rws=byName[name];
+    const friendly = rws[0].tipo.trim()==="Amistoso" || rws[0].cat.trim()==="Amistoso";
+    const cat = friendly ? "AMI" : (rws[0].cat.includes("B") ? "B" : (rws[0].cat.includes("A") && !rws[0].cat.includes("C") && rws[0].cat.trim()!=="Amistoso" ? (rws[0].cat.includes("Clase A")?"A":"C") : "C"));
+    const prev = (existingTournaments||[]).find(t=>t.name===name);
+    return {
+      id: prev ? prev.id : ("imp_t"+(ti+1)),
+      name: name,
+      category: prev ? prev.category : cat,
+      venue: prev ? prev.venue : "Club Berimbau",
+      format: prev ? prev.format : (friendly ? "Singles amistosos" : "—"),
+      status: prev ? prev.status : "En curso",
+      friendly: friendly,
+      matches: rws.map(r=>{ mc++; return { id:"imp_m"+mc, date:r.date, opponent:r.opponent, score:r.score, won:r.won, round:r.round }; })
+    };
+  });
+  return {ok:true, tournaments:tournaments, count:rows.length, errors:errors};
+}
+function calcProfileData(s){
+  const sv=Object.values(s);
+  const sacAvg=(s.sacPlano+s.sacSlice+s.sacKick)/3;
+  const ghAvg=(s.dhTopspin+s.dhPlano+s.revSlice+s.revTopspin)/4;
+  const netAvg=(s.volea+s.dropshot+s.approach)/3;
+  const netFull=(s.volea+s.globo+s.dropshot+s.approach)/4;
+  const aggression=(s.dhTopspin+s.dhPlano+s.approach)/3;
+  const defense=(s.revSlice+s.footwork+s.mentalidad+s.globo)/4;
+  const netDom=netAvg-Math.max(ghAvg,sacAvg);
+  const sacDom=sacAvg-Math.max(ghAvg,netFull);
+  const ghDom=ghAvg-Math.max(netFull,sacAvg);
+  let a,d,c,i;
+  if(netAvg>=7&&netDom>=2){a="Serve & Volleyer";c="#a78bfa";i="🔥";d="Tu juego de red es tu arma principal. Buscas subir a la red en cada oportunidad — con approach, tras el saque, o con chip & charge. Voleas, drop shots y remates son tus herramientas para cerrar puntos rápido y quitarle tiempo al rival.";}
+  else if(netAvg>=8&&sacAvg>=6){a="Serve & Volleyer";c="#a78bfa";i="🔥";d="Estilo ofensivo de transición: sirves y subes a la red. Tu combinación de saque sólido y juego de red te permite presionar al rival quitándole tiempo.";}
+  else if(sacAvg>=8&&sacDom>=1.5){a="Big Server";c="#f472b6";i="💣";d="Tu saque es tu arma más letal. Buscas dominar con aces, saques sin respuesta y puntos de saque +1. Los rallies largos no son tu zona de confort.";}
+  else if(sacAvg>=7&&sacAvg>ghAvg&&sacAvg>netFull&&sacDom>=1){a="Big Server";c="#f472b6";i="💣";d="Tu saque es tu mejor herramienta. Abres el punto con ventaja y buscas resolverlo en los primeros golpes.";}
+  else if(ghAvg>=6&&netFull>=6&&sacAvg>=5&&Math.min.apply(null,sv)>=5&&(Math.max.apply(null,sv)-Math.min.apply(null,sv))<=4&&aggression<7){a="All-Court Player";c="#2dd4bf";i="🌐";d="Jugador versátil, cómodo en todas las zonas de la cancha. Combinas fondo con red y adaptas tu juego según el rival.";}
+  else if(ghAvg>=5&&netFull>=5&&sacAvg>=5&&defense>=5&&Math.min.apply(null,sv)>=4&&(Math.max.apply(null,sv)-Math.min.apply(null,sv))<=4&&Math.max(netDom,sacDom,ghDom)<2&&aggression<7){a="All-Court Player";c="#2dd4bf";i="🌐";d="Jugador equilibrado con recursos en todas las áreas. Tu versatilidad te permite adaptarte a distintos estilos de rival.";}
+  else if(s.dhTopspin>=7&&aggression>=7){a="Attacking Baseliner";c="#f59e0b";i="⚡";d="Dominas desde el fondo con golpes agresivos y pesados. Tu derecha topspin y planos buscan dictar el punto, mover al rival y forzar errores. Toleras poco la defensa — prefieres tomar la iniciativa.";}
+  else if((s.dhTopspin>=7||s.dhPlano>=7)&&ghAvg>netFull){a="Attacking Baseliner";c="#f59e0b";i="⚡";d="Dominas desde el fondo con golpes agresivos. Tu derecha es tu arma principal para dictar el ritmo del punto.";}
+  else if(s.footwork>=7&&s.mentalidad>=7&&defense>aggression){a="Counter Puncher";c="#38bdf8";i="🛡️";d="Tu juego se basa en defensa sólida, cobertura de cancha y paciencia. Dejas que el rival cometa errores y aprovechas el momento para contraatacar.";}
+  else if(defense>=6&&aggression<5.5&&s.footwork>=6){a="Counter Puncher";c="#38bdf8";i="🛡️";d="Eres un jugador defensivo que desgasta al rival con consistencia. Tu paciencia y cobertura de cancha hacen que el oponente tenga que arriesgar.";}
+  else if(ghAvg>=5&&aggression<7){a="Solid Baseliner";c="#34d399";i="🎯";d="Equilibras ataque y defensa desde el fondo. Construyes puntos con consistencia y esperas el momento correcto para acelerar.";}
+  else{
+    const best=Math.max(sacAvg,ghAvg,netAvg,defense);
+    if(best===netAvg){a="Serve & Volleyer";c="#a78bfa";i="🔥";d="Tu instinto es subir a la red.";}
+    else if(best===sacAvg){a="Big Server";c="#f472b6";i="💣";d="Tu saque es lo que más destaca en tu juego.";}
+    else if(best===defense){a="Counter Puncher";c="#38bdf8";i="🛡️";d="Tu fortaleza está en la defensa.";}
+    else{a="Solid Baseliner";c="#34d399";i="🎯";d="Juegas un tenis equilibrado desde el fondo.";}
+  }
+  const parts=[];
+  const sacBest=Math.max(s.sacPlano,s.sacSlice,s.sacKick); const sacN=[];
+  if(s.sacPlano>=sacBest-1&&s.sacPlano>=6)sacN.push("plano");
+  if(s.sacSlice>=sacBest-1&&s.sacSlice>=6)sacN.push("slice");
+  if(s.sacKick>=sacBest-1&&s.sacKick>=6)sacN.push("kick");
+  if(sacBest>=8)parts.push("Saque potente"+(sacN.length?" con variantes "+sacN.join(" y "):"")+".");
+  else if(sacBest>=6)parts.push("Saque funcional"+(sacN.length?" ("+sacN.join(", ")+")":"")+", en desarrollo.");
+  else parts.push("Saque en construcción — área de oportunidad clara.");
+  if(s.dhTopspin>=8&&s.dhPlano>=7)parts.push("Derecha como arma principal — topspin pesado y planos agresivos que buscan dictar el punto.");
+  else if(s.dhTopspin>=7)parts.push("Derecha topspin sólida que permite construir puntos con profundidad.");
+  else if(s.dhPlano>=7)parts.push("Derecha plana agresiva, busca definir con golpes ganadores.");
+  else if(s.dhTopspin>=5)parts.push("Derecha en nivel intermedio, con espacio para ganar consistencia.");
+  else parts.push("Derecha en desarrollo — priorizar mecánica y confianza.");
+  if(s.revTopspin>=7&&s.revSlice>=7)parts.push("Revés completo: topspin para atacar y slice para defender y variar ritmo.");
+  else if(s.revSlice>=7&&s.revTopspin<6)parts.push("Revés preferentemente en slice — efectivo para defensa y approach, topspin en desarrollo.");
+  else if(s.revTopspin>=7)parts.push("Revés topspin como herramienta de ataque, slice como complemento.");
+  else if(s.revSlice>=5)parts.push("Revés funcional con slice, buscando incorporar más topspin.");
+  else parts.push("Revés como área principal de mejora en ambas variantes.");
+  const nS=[];
+  if(s.volea>=7)nS.push("voleas"); if(s.globo>=7)nS.push("globos"); if(s.dropshot>=7)nS.push("drop shots");
+  if(nS.length>=2)parts.push("Buen juego de red con "+nS.join(" y ")+" como recurso táctico.");
+  else if(s.volea>=6)parts.push("Juego de red aceptable, con potencial para explotar más la subida.");
+  else parts.push("Juego de red por desarrollar — puede ser un diferenciador si se trabaja.");
+  if(s.mentalidad>=8&&s.footwork>=7)parts.push("Mentalmente sólido con buen movimiento de pies.");
+  else if(s.mentalidad>=7)parts.push("Buena fortaleza mental en puntos importantes.");
+  else if(s.footwork>=7)parts.push("Buen movimiento de pies y cobertura de cancha.");
+  return {archetype:a, arcDesc:d, arcColor:c, arcIcon:i, bio:parts.join(" ")};
+}
+
+/* ============ STATE & PERSISTENCE ============ */
+let state = { tournaments: SEED, skills: Object.assign({}, DEFAULT_SKILLS), player: Object.assign({}, DEFAULT_PLAYER), profile: null, view:"dashboard", selT:null, statsScope:"comp", formWon:null };
+function saveData(){ try{ localStorage.setItem(LS_DATA, JSON.stringify(state.tournaments)); }catch(e){} }
+function saveSkills(){ try{ localStorage.setItem(LS_SKILLS, JSON.stringify(state.skills)); }catch(e){} }
+function savePlayer(){ try{ localStorage.setItem(LS_PLAYER, JSON.stringify(state.player)); }catch(e){} }
+function loadAll(){
+  try{ const d=localStorage.getItem(LS_DATA); if(d){ const p=JSON.parse(d); if(Array.isArray(p)&&p.length){ state.tournaments=p; } } else { saveData(); } }catch(e){}
+  try{ const s=localStorage.getItem(LS_SKILLS); if(s){ state.skills=Object.assign({}, DEFAULT_SKILLS, JSON.parse(s)); } }catch(e){}
+  try{ const p=localStorage.getItem(LS_PLAYER); if(p){ state.player=Object.assign({}, DEFAULT_PLAYER, JSON.parse(p)); } }catch(e){}
+  state.profile = calcProfileData(state.skills);
+}
+
+/* ============ DERIVED ============ */
+function derive(){
+  const all = state.tournaments.flatMap(t=>t.matches.map(m=>Object.assign({}, m, {tournamentId:t.id, category:t.category, tournamentName:t.name, friendly:t.friendly})));
+  const comp = all.filter(m=>!m.friendly);
+  const fri = all.filter(m=>m.friendly);
+  const cW=comp.filter(m=>m.won).length, cL=comp.length-cW;
+  const fW=fri.filter(m=>m.won).length, fL=fri.length-fW;
+  let gw=0,gl=0,sw=0,sl=0;
+  comp.forEach(m=>{const s=parseScore(m.score);gw+=s.gamesWon;gl+=s.gamesLost;sw+=s.setsWon;sl+=s.setsLost;});
+  let cur=0,best=0,tp=null;
+  comp.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(m=>{
+    if(!cur){cur=1;tp=m.won?"W":"L";}
+    else if((m.won&&tp==="W")||(!m.won&&tp==="L"))cur++;
+    else{cur=1;tp=m.won?"W":"L";}
+    if(tp==="W"&&cur>best)best=cur;
+  });
+  const opps={};
+  all.forEach(m=>{
+    if(!opps[m.opponent])opps[m.opponent]={cW:0,cL:0,fW:0,fL:0,matches:[]};
+    if(m.friendly){m.won?opps[m.opponent].fW++:opps[m.opponent].fL++;}
+    else{m.won?opps[m.opponent].cW++:opps[m.opponent].cL++;}
+    opps[m.opponent].matches.push(m);
+  });
+  return {all,comp,fri,cW,cL,cPct:comp.length?Math.round(cW/comp.length*100):0,fW,fL,gw,gl,sw,sl,streak:tp==="W"?cur:0,bestStreak:best,opps};
+}
+
+/* ============ RENDER ============ */
+function scCard(l,v,a,s,sm){
+  return '<div class="sc'+(sm?' sm':'')+'"><div class="l">'+esc(l)+'</div><div class="v" style="color:'+(a||"var(--tx)")+'">'+v+'</div>'+(s?'<div class="s">'+esc(s)+'</div>':'')+'</div>';
+}
+function matchRow(m, showRound){
+  const f=m.friendly;
+  const cls=f?"f":(m.won?"w":"l");
+  const scoreColor=f?"var(--purp2)":(m.won?"#c8faf3":"#fca5a5");
+  return '<div class="mr" onclick="openEdit(\''+m.tournamentId+'\',\''+m.id+'\')">'
+    +'<div class="wl '+cls+'">'+(m.won?"W":"L")+'</div>'
+    +'<div style="flex:1;min-width:0"><div class="mtop">'+esc(m.opponent)+(f?'<span class="badge">Amistoso</span>':'')+'</div>'
+    +'<div class="msub">'+fmtDate(m.date)+(showRound&&m.round?' · '+esc(m.round):'')+(m.category&&!showRound&&!f?' <span style="color:'+CC[m.category]+';font-size:10px;font-weight:600">Clase '+m.category+'</span>':'')+'</div></div>'
+    +'<div class="score" style="color:'+scoreColor+'">'+esc(m.score)+'</div>'
+    +'<span style="font-size:10px;color:var(--dim);margin-left:8px">✎</span></div>';
+}
+function renderNav(){
+  const views=[["perfil","Perfil"],["dashboard","Dashboard"],["stats","Stats"],["torneos","Torneos"],["rivales","Rivales"],["agregar","+ Partido"]];
+  document.getElementById("nav").innerHTML = views.map(v=>
+    '<button class="navbtn'+(v[0]==="agregar"?' add':'')+(state.view===v[0]?' on':'')+'" onclick="setView(\''+v[0]+'\')">'+v[1]+'</button>'
+  ).join("");
+}
+function render(){
+  renderNav();
+  const d=derive();
+  const el=document.getElementById("main");
+  if(state.selT){ el.innerHTML=viewTorneoDetail(d); return; }
+  if(state.view==="dashboard")el.innerHTML=viewDashboard(d);
+  else if(state.view==="stats")el.innerHTML=viewStats(d);
+  else if(state.view==="torneos")el.innerHTML=viewTorneos(d);
+  else if(state.view==="rivales")el.innerHTML=viewRivales(d);
+  else if(state.view==="perfil")el.innerHTML=viewPerfil(d);
+  else if(state.view==="agregar")el.innerHTML=viewAgregar(d);
+}
+function viewDashboard(d){
+  let h='<div class="lbl">Récord competitivo</div><div class="grid3">'
+    +scCard("Récord", d.cW+"W – "+d.cL+"L","var(--teal)")
+    +scCard("Win %", d.cPct+"%", d.cPct>=50?"var(--teal)":"var(--red)")
+    +scCard("Racha", d.streak>0?d.streak+"W 🔥":"—","var(--amber)")+'</div>';
+  h+='<div class="grid2">'
+    +scCard("Sets", d.sw+"–"+d.sl, null, (d.sw+d.sl>0?Math.round(d.sw/(d.sw+d.sl)*100):0)+"%")
+    +scCard("Games", d.gw+"–"+d.gl, null, (d.gw+d.gl>0?Math.round(d.gw/(d.gw+d.gl)*100):0)+"%")+'</div>';
+  if(d.fri.length){
+    h+='<div style="padding:12px 16px;background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.12);border-radius:10px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between">'
+      +'<div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:var(--purp)"></span><span style="font-size:12px;color:var(--purp2);font-weight:500">Amistosos</span></div>'
+      +'<span style="font-size:14px;font-weight:600;color:var(--purp)">'+d.fW+'W–'+d.fL+'L</span></div>';
+  }
+  h+='<div class="lbl">Win Rate por Categoría</div>';
+  ["C","B"].forEach(cat=>{
+    const cm=d.comp.filter(m=>m.category===cat), cw=cm.filter(m=>m.won).length, pct=cm.length?Math.round(cw/cm.length*100):0;
+    h+='<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">'
+      +'<span style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:'+CC[cat]+'"></span>Clase '+cat+'</span>'
+      +'<span style="color:var(--mut2)">'+cw+'/'+cm.length+' ('+pct+'%)</span></div>'
+      +'<div class="bar"><div class="barfill" style="width:'+pct+'%;background:'+CC[cat]+'"></div></div></div>';
+  });
+  h+='<div class="lbl" style="margin-top:20px">Últimos partidos</div>';
+  d.all.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,6).forEach(m=>{h+=matchRow(m,false);});
+  return h;
+}
+function viewStats(d){
+  const ms = state.statsScope==="comp" ? d.comp : d.all;
+  const fsW={w:0,l:0}, fsL={w:0,l:0}, two={w:0,l:0}, three={w:0,l:0}, stb={w:0,l:0};
+  let tbW=0,tbL=0,gW=0,gL=0;
+  ms.forEach(m=>{
+    const sets=parseSets(m.score);
+    if(!sets.length)return;
+    sets.forEach(s=>{gW+=s.my;gL+=s.op;if(s.my===7&&s.op===6)tbW++;if(s.my===6&&s.op===7)tbL++;});
+    const f=sets[0];
+    if(f.my>f.op){m.won?fsW.w++:fsW.l++;}else{m.won?fsL.w++:fsL.l++;}
+    if(sets.length===2){m.won?two.w++:two.l++;}
+    if(sets.length>=3){
+      m.won?three.w++:three.l++;
+      const t=sets[2];
+      if(Math.max(t.my,t.op)>=8){m.won?stb.w++:stb.l++;}
+    }
+  });
+  const pct=r=>{const t=r.w+r.l;return t?Math.round(r.w/t*100):0;};
+  const monthly={};
+  ms.forEach(m=>{const k=m.date.slice(0,7);if(!monthly[k])monthly[k]={w:0,l:0};m.won?monthly[k].w++:monthly[k].l++;});
+  const mKeys=Object.keys(monthly).sort();
+  const mMax=Math.max.apply(null, mKeys.map(k=>monthly[k].w+monthly[k].l).concat([1]));
+  const mName=k=>{const p=k.split("-");const n=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];return n[parseInt(p[1])-1]+" "+p[0].slice(2);};
+  const n=ms.length||1;
+  let h='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div class="lbl" style="margin:0">Estadísticas</div>'
+    +'<div style="display:flex;gap:4px">'
+    +'<button class="seg'+(state.statsScope==="comp"?' on':'')+'" onclick="setScope(\'comp\')">Competitivo</button>'
+    +'<button class="seg'+(state.statsScope==="all"?' on':'')+'" onclick="setScope(\'all\')">Todos</button></div></div>';
+  h+='<div class="lbl">El primer set importa</div><div class="grid2">'
+    +scCard("Ganando el 1er set", fsW.w+"W–"+fsW.l+"L","var(--teal)",pct(fsW)+"% victorias")
+    +scCard("Perdiendo el 1er set", fsL.w+"W–"+fsL.l+"L",fsL.w>0?"var(--amber)":"var(--red)",pct(fsL)+"% remontadas")+'</div>';
+  h+='<div class="lbl">Duración del partido</div><div class="grid3">'
+    +scCard("En 2 sets", two.w+"–"+two.l,null,null,true)
+    +scCard("En 3 sets", three.w+"–"+three.l,null,null,true)
+    +scCard("Super TB", stb.w+"–"+stb.l, stb.w>=stb.l?"var(--teal)":"var(--red)",null,true)+'</div>';
+  h+='<div class="lbl">Tiebreaks (sets 7-6)</div><div class="grid2">'
+    +scCard("TB ganados", String(tbW),"var(--teal)",null,true)
+    +scCard("TB perdidos", String(tbL),"var(--red)",null,true)+'</div>';
+  h+='<div class="lbl">Games por partido</div><div class="grid3">'
+    +scCard("Ganados",(gW/n).toFixed(1),null,null,true)
+    +scCard("Concedidos",(gL/n).toFixed(1),null,null,true)
+    +scCard("Diferencial",(gW-gL>=0?"+":"")+(gW-gL),gW-gL>=0?"var(--teal)":"var(--red)",null,true)+'</div>';
+  h+='<div class="lbl">Evolución mensual</div>';
+  mKeys.forEach(k=>{
+    const dd=monthly[k];
+    h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
+      +'<span style="font-size:11px;color:var(--mut2);width:52px;flex-shrink:0">'+mName(k)+'</span>'
+      +'<div style="flex:1;display:flex;height:14px;border-radius:4px;overflow:hidden;background:rgba(255,255,255,.04)">'
+      +(dd.w>0?'<div style="width:'+(dd.w/mMax*100)+'%;background:rgba(45,212,191,.7)"></div>':'')
+      +(dd.l>0?'<div style="width:'+(dd.l/mMax*100)+'%;background:rgba(248,113,113,.6)"></div>':'')
+      +'</div><span style="font-size:11px;font-weight:600;width:46px;text-align:right;flex-shrink:0">'+dd.w+'W–'+dd.l+'L</span></div>';
+  });
+  return h;
+}
+function viewTorneos(d){
+  const compT=state.tournaments.filter(t=>!t.friendly);
+  let h='<div class="lbl">'+compT.length+' torneos</div>';
+  compT.forEach(t=>{
+    const tw=t.matches.filter(m=>m.won).length, tl=t.matches.length-tw;
+    h+='<button class="trow" onclick="openT(\''+t.id+'\')">'
+      +'<span class="tcat" style="background:'+CC[t.category]+'18;color:'+CC[t.category]+'">'+t.category+'</span>'
+      +'<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500;margin-bottom:2px">'+esc(t.name)+'</div><div style="font-size:11px;color:var(--mut)">'+esc(t.format)+'</div></div>'
+      +'<div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:600">'+tw+'W–'+tl+'L</div>'
+      +(t.status==="En curso"?'<span style="font-size:10px;color:var(--teal);font-weight:600;text-transform:uppercase">● En curso</span>':'')+'</div></button>';
+  });
+  const friT=state.tournaments.filter(t=>t.friendly);
+  if(friT.length){
+    h+='<div class="lbl" style="margin-top:20px">Amistosos</div>';
+    friT.forEach(t=>{
+      const tw=t.matches.filter(m=>m.won).length, tl=t.matches.length-tw;
+      h+='<button class="trow fri" onclick="openT(\''+t.id+'\')">'
+        +'<span class="tcat" style="background:rgba(167,139,250,.15);color:var(--purp);font-size:9px">AMI</span>'
+        +'<div style="flex:1"><div style="font-size:14px;font-weight:500;margin-bottom:2px">'+esc(t.name)+'</div><div style="font-size:11px;color:var(--mut)">'+t.matches.length+' partido'+(t.matches.length!==1?'s':'')+'</div></div>'
+        +'<div style="font-size:14px;font-weight:600;color:var(--purp)">'+tw+'W–'+tl+'L</div></button>';
+    });
+  }
+  return h;
+}
+function viewTorneoDetail(d){
+  const t=state.tournaments.find(x=>x.id===state.selT);
+  if(!t){ state.selT=null; return viewTorneos(d); }
+  let gw=0,gl=0,sw=0,sl=0;
+  t.matches.forEach(m=>{const s=parseScore(m.score);gw+=s.gamesWon;gl+=s.gamesLost;sw+=s.setsWon;sl+=s.setsLost;});
+  const tw=t.matches.filter(m=>m.won).length, tl=t.matches.length-tw;
+  let h='<button class="back" onclick="closeT()">← Volver</button>';
+  h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">';
+  if(t.friendly)h+='<span class="pill" style="background:rgba(167,139,250,.15);color:var(--purp);font-weight:700;font-size:11px;padding:3px 8px">Amistoso</span>';
+  else h+='<span class="pill" style="background:'+CC[t.category]+'20;color:'+CC[t.category]+';font-weight:700;font-size:11px;padding:3px 8px">Clase '+t.category+'</span>';
+  if(t.status==="En curso")h+='<span style="font-size:10px;color:var(--teal)">● En curso</span>';
+  h+='</div><h2 class="tname">'+esc(t.name)+'</h2>';
+  h+='<div style="font-size:12px;color:var(--mut);margin-bottom:12px">'+esc(t.format)+' · '+esc(t.venue)+'</div>';
+  if(!t.friendly){ h+='<div style="margin-bottom:16px"><button class="seg" onclick="toggleTStatus(\''+t.id+'\')">'+(t.status==="En curso"?"✔ Marcar como Finalizado":"↺ Reabrir torneo")+'</button></div>'; }
+  h+='<div class="grid3">'+scCard("W–L",tw+"–"+tl,t.friendly?"var(--purp)":null,null,true)+scCard("Games",gw+"–"+gl,null,null,true)+scCard("Sets",sw+"–"+sl,null,null,true)+'</div>';
+  t.matches.forEach(m=>{h+=matchRow(Object.assign({},m,{tournamentId:t.id,category:t.category,friendly:t.friendly}),true);});
+  return h;
+}
+function viewRivales(d){
+  const entries=Object.entries(d.opps).sort((a,b)=>(b[1].cW+b[1].cL+b[1].fW+b[1].fL)-(a[1].cW+a[1].cL+a[1].fW+a[1].fL));
+  let h='<div class="lbl">'+entries.length+' rivales</div>';
+  entries.forEach(pair=>{
+    const name=pair[0], dd=pair[1];
+    h+='<div style="padding:12px 16px;background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:10px;margin-bottom:8px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+      +'<span style="font-size:14px;font-weight:500">'+esc(name)+'</span>'
+      +'<div style="display:flex;align-items:center;gap:10px">'
+      +'<span style="font-size:13px;font-weight:600;color:'+(dd.cW>dd.cL?"var(--teal)":dd.cW<dd.cL?"var(--red)":"var(--mut2)")+'">'+dd.cW+'W–'+dd.cL+'L</span>'
+      +((dd.fW>0||dd.fL>0)?'<span style="font-size:11px;font-weight:500;color:var(--purp)">+'+dd.fW+'W–'+dd.fL+'L ami</span>':'')
+      +'</div></div><div style="display:flex;gap:6px;flex-wrap:wrap">';
+    dd.matches.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(m=>{
+      const bg=m.friendly?"rgba(167,139,250,.12)":(m.won?"rgba(45,212,191,.1)":"rgba(248,113,113,.1)");
+      const col=m.friendly?"var(--purp)":(m.won?"var(--teal)":"var(--red)");
+      h+='<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:'+bg+';color:'+col+';'+(m.friendly?'border:1px solid rgba(167,139,250,.2)':'')+'">'
+        +(m.won?"W":"L")+' '+esc(m.score)+' · '+fmtDate(m.date).slice(0,-5)+(m.friendly?" ✦":"")+'</span>';
+    });
+    h+='</div></div>';
+  });
+  return h;
+}
+function viewPerfil(d){
+  const p=state.profile||calcProfileData(state.skills);
+  let h='<div style="background:linear-gradient(135deg,rgba(45,212,191,.06),rgba(167,139,250,.06));border:1px solid var(--line);border-radius:14px;padding:24px 20px;margin-bottom:20px;position:relative;overflow:hidden">'
+    +'<div style="display:flex;align-items:center;gap:16px">'
+    +'<div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#2dd4bf,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#0a1628;flex-shrink:0">'+esc(initials(state.player.name))+'</div>'
+    +'<div style="flex:1;min-width:0"><h2 style="font-size:19px;font-family:\'Playfair Display\',Georgia,serif;font-weight:600;margin-bottom:2px">'+esc(state.player.name)+'</h2>'
+    +'<div style="font-size:12px;color:var(--mut)">'+(state.player.age?esc(state.player.age)+' años · ':'')+esc(state.player.hand)+' · Club Berimbau</div></div>'
+    +'<button class="seg" onclick="openPlayerEdit()">✎ Editar</button></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:20px">'
+    +'<div style="text-align:center"><div style="font-size:18px;font-weight:700;color:var(--teal)">'+d.cW+'W–'+d.cL+'L</div><div style="font-size:10px;color:var(--mut)">Competitivo</div></div>'
+    +'<div style="text-align:center"><div style="font-size:18px;font-weight:700">'+d.cPct+'%</div><div style="font-size:10px;color:var(--mut)">Win Rate</div></div>'
+    +'<div style="text-align:center"><div style="font-size:18px;font-weight:700;color:var(--amber)">'+d.all.length+'</div><div style="font-size:10px;color:var(--mut)">Partidos</div></div>'
+    +'</div></div>';
+  h+='<div class="lbl">Estilo de juego · Clasificación ATP</div>'
+    +'<div class="arc" style="background:'+p.arcColor+'10;border:1px solid '+p.arcColor+'25">'
+    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="font-size:20px">'+p.arcIcon+'</span>'
+    +'<span style="font-size:17px;font-weight:700;color:'+p.arcColor+';font-family:\'Playfair Display\',Georgia,serif">'+p.archetype+'</span></div>'
+    +'<div style="font-size:13px;color:var(--tx2);line-height:1.6;margin-bottom:12px">'+p.arcDesc+'</div>'
+    +'<div style="font-size:11px;color:var(--mut);line-height:1.5">Clasificación basada en los 6 estilos oficiales ATP TennisViz.</div></div>'
+    +'<div style="font-size:13px;color:var(--mut2);line-height:1.6;margin-bottom:24px">'+p.bio+'</div>';
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div class="lbl" style="margin:0">Habilidades · Sensibilidad</div><div style="font-size:10px;color:var(--dim)">Ajusta y Recalcula</div></div>';
+  const groups=[
+    ["Saque",[["sacPlano","Saque plano"],["sacSlice","Saque slice"],["sacKick","Saque kick"]]],
+    ["Derecha",[["dhTopspin","Derecha topspin"],["dhPlano","Derecha plano"]]],
+    ["Revés",[["revSlice","Revés slice"],["revTopspin","Revés topspin"]]],
+    ["Red y táctico",[["volea","Voleas"],["globo","Globos"],["dropshot","Drop shot"],["approach","Approach"]]],
+    ["Físico / Mental",[["footwork","Footwork"],["mentalidad","Mentalidad"]]]
+  ];
+  groups.forEach(g=>{
+    h+='<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:600;margin-bottom:8px">'+g[0]+'</div>';
+    g[1].forEach(item=>{
+      const k=item[0], l=item[1], v=state.skills[k]||5;
+      const color=v>=8?"var(--teal)":v>=6?"var(--amber)":v>=4?"#fb923c":"var(--red)";
+      h+='<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+        +'<span style="font-size:12px;color:var(--mut2)">'+l+'</span><span style="font-size:13px;font-weight:700;color:'+color+'">'+v+'/10</span></div>'
+        +'<div style="display:flex;align-items:center;gap:8px">'
+        +'<button class="skbtn" onclick="skill(\''+k+'\',-1)"'+(v<=1?" disabled":"")+'>−</button>'
+        +'<div style="flex:1" class="bar"><div class="barfill" style="width:'+(v*10)+'%;background:'+color+'"></div></div>'
+        +'<button class="skbtn" onclick="skill(\''+k+'\',1)"'+(v>=10?" disabled":"")+'>+</button>'
+        +'</div></div>';
+    });
+    h+='</div>';
+  });
+  h+='<button class="btn amber" style="margin-bottom:24px" onclick="recalc()">🔄 Recalcular perfil</button>';
+  const entries=Object.entries(state.skills);
+  const vals=entries.map(e=>e[1]);
+  const maxV=Math.max.apply(null,vals), minV=Math.min.apply(null,vals);
+  const above=vals.filter(v=>v>minV);
+  const secondMin=above.length?Math.min.apply(null,above):minV;
+  const weakest=entries.filter(e=>e[1]<=secondMin).sort((a,b)=>a[1]-b[1]).slice(0,4);
+  const strongest=entries.filter(e=>e[1]>=maxV-1&&e[1]>=7).sort((a,b)=>b[1]-a[1]);
+  const nm={sacPlano:"Saque plano",sacSlice:"Saque slice",sacKick:"Saque kick",dhTopspin:"Derecha topspin",dhPlano:"Derecha plano",revSlice:"Revés slice",revTopspin:"Revés topspin",volea:"Voleas",globo:"Globos",dropshot:"Drop shot",approach:"Approach",footwork:"Footwork",mentalidad:"Mentalidad"};
+  const dr={sacPlano:"Canasta de 20 saques en T y abiertos, foco en potencia",sacSlice:"Saque slice abierto en deuce para abrir la cancha",sacKick:"Canasta de kick al revés rival, buscar bote alto",dhTopspin:"Rally cruzado derecha con conteo de 10+ bolas",dhPlano:"Winner de derecha plana sobre bola corta",revSlice:"Slice profundo cruzado, mantener bola baja y pesada",revTopspin:"Canasta de revés topspin cruzado, énfasis en cepillado",volea:"Volea-volea en red + remate de volea alta",globo:"Globo defensivo desde posición incómoda",dropshot:"Drop shot con slice desde media cancha",approach:"Approach al revés rival + split step en red",footwork:"Conos laterales + split step + recuperación central",mentalidad:"Visualización pre-partido + rutina entre puntos"};
+  h+='<div class="lbl">Plan de entrenamiento sugerido</div>';
+  h+='<div style="padding:14px 16px;background:rgba(248,113,113,.06);border:1px solid rgba(248,113,113,.12);border-radius:10px;margin-bottom:10px">'
+    +'<div style="font-size:11px;color:var(--red);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">🎯 Prioridad — Áreas a mejorar</div>';
+  weakest.forEach(e=>{
+    h+='<div style="margin-bottom:8px"><div style="font-size:13px;font-weight:600;margin-bottom:2px">'+nm[e[0]]+' <span style="color:var(--red);font-size:11px">('+e[1]+'/10)</span></div>'
+      +'<div style="font-size:11px;color:var(--mut2);line-height:1.4">'+dr[e[0]]+'</div></div>';
+  });
+  h+='</div><div style="padding:14px 16px;background:rgba(45,212,191,.06);border:1px solid rgba(45,212,191,.12);border-radius:10px;margin-bottom:20px">'
+    +'<div style="font-size:11px;color:var(--teal);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">💪 Fortalezas — Mantener nivel</div>';
+  strongest.forEach(e=>{
+    h+='<div style="margin-bottom:4px"><span style="font-size:13px;font-weight:600">'+nm[e[0]]+'</span> <span style="font-size:11px;color:var(--teal)">('+e[1]+'/10)</span></div>';
+  });
+  h+='</div>';
+  return h;
+}
+function viewAgregar(d){
+  const active=state.tournaments.filter(t=>t.status==="En curso"||t.friendly);
+  let h='<div class="lbl">Registrar partido</div>';
+  h+='<div class="fld"><label class="flbl">Torneo / Amistoso</label><select class="inp" id="f-tid"><option value="">Seleccionar...</option>';
+  active.forEach(t=>{
+    const emoji=t.friendly?"🟣 ":(t.category==="C"?"🟢 ":"🟡 ");
+    h+='<option value="'+t.id+'">'+emoji+esc(t.name)+'</option>';
+  });
+  h+='</select></div>';
+  h+='<div class="fld"><label class="flbl">Rival</label><input class="inp" id="f-opp" type="text" placeholder="Nombre del rival"></div>';
+  h+='<div class="fld"><label class="flbl">Fecha</label><input class="inp" id="f-date" type="date" value="'+new Date().toISOString().split("T")[0]+'"></div>';
+  h+='<div class="fld"><label class="flbl">Marcador (mis games – rival)</label>';
+  for(let i=1;i<=3;i++){
+    h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
+      +'<span style="font-size:11px;color:var(--mut);width:56px;flex-shrink:0">Set '+i+(i===3?' (op.)':'')+'</span>'
+      +'<input class="inp" id="f-s'+i+'my" type="text" inputmode="numeric" maxlength="2" placeholder="—" style="width:52px;text-align:center;padding:10px 8px">'
+      +'<span style="color:var(--mut)">–</span>'
+      +'<input class="inp" id="f-s'+i+'op" type="text" inputmode="numeric" maxlength="2" placeholder="—" style="width:52px;text-align:center;padding:10px 8px"></div>';
+  }
+  h+='</div>';
+  h+='<div class="fld"><label class="flbl">Resultado</label><div style="display:flex;gap:8px">'
+    +'<button class="tgl" id="btnW" onclick="pickWon(true)">Victoria ✓</button>'
+    +'<button class="tgl" id="btnL" onclick="pickWon(false)">Derrota ✗</button></div></div>';
+  h+='<div class="fld" style="margin-bottom:22px"><label class="flbl">Ronda (opcional)</label><input class="inp" id="f-round" type="text" placeholder="Ej: Semifinal, Grupo 1..."></div>';
+  h+='<button class="btn teal" onclick="submitMatch()">Registrar Partido</button>';
+  h+='<div style="margin-top:34px;padding-top:18px;border-top:1px solid var(--line)"><div class="lbl">Nuevo torneo</div>';
+  h+='<div class="fld"><label class="flbl">Nombre (YYYY_MM_Cat_Nombre)</label><input class="inp" id="t-name" type="text" placeholder="Ej: 2026_08_B_Verano"></div>';
+  h+='<div class="fld"><label class="flbl">Categoría</label><select class="inp" id="t-cat"><option value="C">Clase C</option><option value="B">Clase B</option><option value="A">Clase A</option></select></div>';
+  h+='<div class="fld" style="margin-bottom:20px"><label class="flbl">Formato (opcional)</label><input class="inp" id="t-fmt" type="text" placeholder="Ej: Round Robin, Eliminación directa..."></div>';
+  h+='<button class="btn amber" onclick="submitTournament()">Crear Torneo</button></div>';
+  h+='<div style="margin-top:34px;padding-top:16px;border-top:1px solid var(--line)">'
+    +'<button style="font-size:11px;color:var(--dim);background:none;border:none;cursor:pointer;font-family:inherit" onclick="resetSeed()">Restaurar datos originales...</button></div>';
+  return h;
+}
+
+/* ============ ACTIONS ============ */
+function toast(msg){
+  const old=document.querySelector(".toast"); if(old)old.remove();
+  const t=document.createElement("div"); t.className="toast"; t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>{ t.remove(); }, 2200);
+}
+function setView(v){ state.view=v; state.selT=null; state.formWon=null; render(); window.scrollTo(0,0); }
+function setScope(s){ state.statsScope=s; render(); }
+function openT(id){ state.selT=id; render(); window.scrollTo(0,0); }
+function closeT(){ state.selT=null; render(); }
+function skill(k,delta){
+  const v=(state.skills[k]||5)+delta;
+  if(v<1||v>10)return;
+  state.skills[k]=v; saveSkills(); render();
+}
+function recalc(){ state.profile=calcProfileData(state.skills); toast("Perfil recalculado ✓"); render(); }
+function pickWon(v){
+  state.formWon=v;
+  document.getElementById("btnW").className="tgl"+(v===true?" won":"");
+  document.getElementById("btnL").className="tgl"+(v===false?" lost":"");
+}
+function submitMatch(){
+  const tid=document.getElementById("f-tid").value;
+  const opp=document.getElementById("f-opp").value.trim();
+  const date=document.getElementById("f-date").value;
+  const sets=[];
+  for(let i=1;i<=3;i++){
+    const my=document.getElementById("f-s"+i+"my").value.replace(/[^0-9]/g,"");
+    const op=document.getElementById("f-s"+i+"op").value.replace(/[^0-9]/g,"");
+    if(my&&op)sets.push(my+"-"+op);
+  }
+  const round=document.getElementById("f-round").value.trim();
+  if(!tid){toast("Selecciona el torneo");return;}
+  if(!opp){toast("Escribe el nombre del rival");return;}
+  if(!date){toast("Selecciona la fecha");return;}
+  if(sets.length<2){toast("Captura al menos 2 sets completos");return;}
+  if(state.formWon===null){toast("Marca Victoria o Derrota");return;}
+  const match={ id:"u_"+Date.now(), date:date, opponent:opp, score:sets.join(", "), won:state.formWon, round:round||"—" };
+  state.tournaments=state.tournaments.map(t=>t.id===tid?Object.assign({},t,{matches:t.matches.concat([match])}):t);
+  saveData();
+  state.formWon=null;
+  toast("Partido registrado ✓");
+  render();
+}
+function submitTournament(){
+  const name=document.getElementById("t-name").value.trim();
+  const cat=document.getElementById("t-cat").value;
+  const fmt=document.getElementById("t-fmt").value.trim();
+  if(!name){toast("Escribe el nombre del torneo");return;}
+  state.tournaments=state.tournaments.concat([{ id:"u_t"+Date.now(), name:name, category:cat, venue:"Club Berimbau", format:fmt||"En curso", status:"En curso", friendly:false, matches:[] }]);
+  saveData();
+  toast("Torneo creado ✓");
+  render();
+}
+function openEdit(tid, mid){
+  const t=state.tournaments.find(x=>x.id===tid); if(!t)return;
+  const m=t.matches.find(x=>x.id===mid); if(!m)return;
+  const root=document.getElementById("modal-root");
+  root.innerHTML='<div class="modal-back" onclick="closeModal(event)">'
+    +'<div class="sheet" onclick="event.stopPropagation()">'
+    +'<div class="handle"></div>'
+    +'<div style="font-size:16px;font-weight:600;margin-bottom:16px">Editar partido</div>'
+    +'<div class="fld"><label class="flbl">Rival</label><input class="inp" id="e-opp" type="text" value="'+esc(m.opponent)+'"></div>'
+    +'<div class="fld"><label class="flbl">Fecha</label><input class="inp" id="e-date" type="date" value="'+m.date+'"></div>'
+    +'<div class="fld"><label class="flbl">Marcador</label><input class="inp" id="e-score" type="text" value="'+esc(m.score)+'" placeholder="6-3, 6-2"></div>'
+    +'<div class="fld"><label class="flbl">Ronda</label><input class="inp" id="e-round" type="text" value="'+esc(m.round||"")+'"></div>'
+    +'<div class="fld" style="margin-bottom:20px"><label class="flbl">Resultado</label><div style="display:flex;gap:8px">'
+    +'<button class="tgl'+(m.won?' won':'')+'" id="e-btnW" onclick="ePickWon(true)">Victoria ✓</button>'
+    +'<button class="tgl'+(!m.won?' lost':'')+'" id="e-btnL" onclick="ePickWon(false)">Derrota ✗</button></div></div>'
+    +'<button class="btn teal" style="margin-bottom:12px" onclick="saveEdit(\''+tid+'\',\''+mid+'\')">Guardar cambios</button>'
+    +'<button style="width:100%;padding:10px;font-size:12px;font-weight:500;background:none;border:1px solid rgba(248,113,113,.2);border-radius:8px;color:var(--red);cursor:pointer;font-family:inherit" onclick="deleteEdit(\''+tid+'\',\''+mid+'\')">Eliminar partido</button>'
+    +'</div></div>';
+  window._editWon = m.won;
+}
+function ePickWon(v){
+  window._editWon=v;
+  document.getElementById("e-btnW").className="tgl"+(v===true?" won":"");
+  document.getElementById("e-btnL").className="tgl"+(v===false?" lost":"");
+}
+function saveEdit(tid, mid){
+  const opp=document.getElementById("e-opp").value.trim();
+  const date=document.getElementById("e-date").value;
+  const score=document.getElementById("e-score").value.trim();
+  const round=document.getElementById("e-round").value.trim();
+  if(!opp||!score||!date){toast("Completa rival, fecha y marcador");return;}
+  state.tournaments=state.tournaments.map(t=>t.id===tid?Object.assign({},t,{matches:t.matches.map(m=>m.id===mid?Object.assign({},m,{opponent:opp,date:date,score:score,round:round||"—",won:window._editWon}):m)}):t);
+  saveData(); closeModal(); toast("Partido actualizado ✓"); render();
+}
+function deleteEdit(tid, mid){
+  if(!confirm("¿Eliminar este partido? No se puede deshacer."))return;
+  state.tournaments=state.tournaments.map(t=>t.id===tid?Object.assign({},t,{matches:t.matches.filter(m=>m.id!==mid)}):t);
+  saveData(); closeModal(); toast("Partido eliminado"); render();
+}
+function closeModal(ev){
+  if(ev&&ev.target&&!ev.target.classList.contains("modal-back"))return;
+  document.getElementById("modal-root").innerHTML="";
+}
+function toggleTStatus(tid){
+  state.tournaments=state.tournaments.map(t=>t.id===tid?Object.assign({},t,{status:t.status==="En curso"?"Finalizado":"En curso"}):t);
+  saveData(); toast("Estado del torneo actualizado ✓"); render();
+}
+function openPlayerEdit(){
+  const p=state.player;
+  const root=document.getElementById("modal-root");
+  root.innerHTML='<div class="modal-back" onclick="closeModal(event)">'
+    +'<div class="sheet" onclick="event.stopPropagation()">'
+    +'<div class="handle"></div>'
+    +'<div style="font-size:16px;font-weight:600;margin-bottom:16px">Mi perfil</div>'
+    +'<div class="fld"><label class="flbl">Nombre</label><input class="inp" id="p-name" type="text" value="'+esc(p.name)+'" placeholder="Tu nombre"></div>'
+    +'<div class="fld"><label class="flbl">Edad (opcional)</label><input class="inp" id="p-age" type="text" inputmode="numeric" maxlength="3" value="'+esc(p.age)+'" placeholder="—"></div>'
+    +'<div class="fld" style="margin-bottom:20px"><label class="flbl">Mano</label><select class="inp" id="p-hand">'
+    +'<option value="Diestro"'+(p.hand==="Diestro"?" selected":"")+'>Diestro</option>'
+    +'<option value="Zurdo"'+(p.hand==="Zurdo"?" selected":"")+'>Zurdo</option></select></div>'
+    +'<button class="btn teal" style="margin-bottom:12px" onclick="savePlayerEdit()">Guardar</button>'
+    +'<button style="width:100%;padding:12px;font-size:13px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:var(--mut);cursor:pointer;font-family:inherit" onclick="closeModal()">Cancelar</button>'
+    +'</div></div>';
+}
+function savePlayerEdit(){
+  const name=document.getElementById("p-name").value.trim();
+  const age=document.getElementById("p-age").value.replace(/[^0-9]/g,"");
+  const hand=document.getElementById("p-hand").value;
+  if(!name){toast("Escribe tu nombre");return;}
+  state.player={name:name,age:age,hand:hand};
+  savePlayer(); closeModal(); toast("Perfil guardado ✓"); render();
+}
+function openExport(){
+  const csv=generateCSV(state.tournaments);
+  const root=document.getElementById("modal-root");
+  root.innerHTML='<div class="modal-back" onclick="closeModal(event)">'
+    +'<div class="sheet" onclick="event.stopPropagation()">'
+    +'<div class="handle"></div>'
+    +'<div style="font-size:17px;font-weight:600;text-align:center;margin-bottom:4px">Backup de datos</div>'
+    +'<div style="font-size:12px;color:var(--mut);text-align:center;margin-bottom:18px">'+state.tournaments.length+' torneos · '+state.tournaments.reduce((a,t)=>a+t.matches.length,0)+' partidos</div>'
+    +'<button class="btn teal" style="margin-bottom:10px" onclick="copyCSV()">📋 Copiar CSV al portapapeles</button>'
+    +'<button class="btn amber" style="margin-bottom:18px" onclick="downloadCSV()">📥 Descargar archivo .csv</button>'
+    +'<div class="lbl">Después de copiar</div>'
+    +'<div class="step"><span class="stepn">1</span><div><div style="font-size:13px;font-weight:500">Abrir Google Sheets</div><div style="font-size:11px;color:var(--mut)">sheets.new en Chrome</div></div></div>'
+    +'<div class="step"><span class="stepn">2</span><div><div style="font-size:13px;font-weight:500">Tocar celda A1 → Pegar</div><div style="font-size:11px;color:var(--mut)">Datos → Dividir texto en columnas → separador: |</div></div></div>'
+    +'<div class="step" style="margin-bottom:16px"><span class="stepn">3</span><div><div style="font-size:13px;font-weight:500">Renombrar archivo</div><div style="font-size:11px;color:var(--mut)">Tennis_Berimbau_'+new Date().toISOString().slice(0,10)+'</div></div></div>'
+    +'<button style="width:100%;padding:12px;font-size:13px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:var(--mut);cursor:pointer;font-family:inherit" onclick="closeModal()">Cerrar</button>'
+    +'</div></div>';
+  window._csv=csv;
+}
+function copyCSV(){
+  try{
+    const ta=document.createElement("textarea");
+    ta.value=window._csv;
+    ta.style.cssText="position:fixed;opacity:0";
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    toast("✓ CSV copiado al portapapeles");
+  }catch(e){
+    if(navigator.clipboard)navigator.clipboard.writeText(window._csv).then(()=>toast("✓ CSV copiado")).catch(()=>toast("Error al copiar"));
+  }
+}
+function downloadCSV(){
+  try{
+    const blob=new Blob(["\uFEFF"+window._csv],{type:"text/csv;charset=utf-8"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;
+    a.download="Tennis_Berimbau_"+new Date().toISOString().slice(0,10)+".csv";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    toast("Descarga iniciada ✓");
+  }catch(e){ toast("Usa Copiar CSV"); }
+}
+function openImport(){
+  const root=document.getElementById("modal-root");
+  root.innerHTML='<div class="modal-back" onclick="closeModal(event)">'
+    +'<div class="sheet" onclick="event.stopPropagation()">'
+    +'<div class="handle"></div>'
+    +'<div style="font-size:17px;font-weight:600;text-align:center;margin-bottom:4px">Importar CSV</div>'
+    +'<div style="font-size:12px;color:var(--mut);text-align:center;margin-bottom:16px">Pega tu backup separado por pipes | — reemplaza todos los datos actuales</div>'
+    +'<textarea class="inp" id="imp-text" placeholder="Fecha|Torneo|Categoría|Tipo|Ronda|Rival|Marcador|Resultado|..."></textarea>'
+    +'<button class="btn teal" style="margin-top:14px;margin-bottom:10px" onclick="doImport()">Importar datos</button>'
+    +'<button style="width:100%;padding:12px;font-size:13px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:var(--mut);cursor:pointer;font-family:inherit" onclick="closeModal()">Cancelar</button>'
+    +'</div></div>';
+}
+function doImport(){
+  const text=document.getElementById("imp-text").value;
+  if(!text.trim()){toast("Pega el CSV primero");return;}
+  const result=parseCSVImport(text, state.tournaments.length?state.tournaments:SEED);
+  if(!result.ok){ alert("No se pudo importar:\n"+result.errors.join("\n")); return; }
+  if(!confirm("Se importarán "+result.count+" partidos en "+result.tournaments.length+" torneos, REEMPLAZANDO los datos actuales. ¿Continuar?"))return;
+  state.tournaments=result.tournaments;
+  saveData(); closeModal();
+  toast("✓ "+result.count+" partidos importados");
+  if(result.errors.length){ setTimeout(()=>alert("Advertencias:\n"+result.errors.join("\n")), 400); }
+  render();
+}
+function resetSeed(){
+  if(!confirm("¿Restaurar los datos originales (26 partidos)? Se perderán los cambios."))return;
+  state.tournaments=JSON.parse(JSON.stringify(SEED));
+  saveData(); toast("Datos restaurados"); render();
+}
+
+/* ============ BOOT ============ */
+function boot(){ loadAll(); render(); }
+if (typeof document !== "undefined" && typeof localStorage !== "undefined") { boot(); }
+</script>
+</body>
+</html>
