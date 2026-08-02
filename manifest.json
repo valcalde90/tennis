@@ -1,0 +1,30 @@
+{
+  "name": "Tennis Tracker",
+  "short_name": "Tennis Tracker",
+  "description": "Registro de partidos, torneos y estadísticas de tennis",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#46543C",
+  "theme_color": "#46543C",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
