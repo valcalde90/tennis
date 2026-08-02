@@ -17,7 +17,7 @@ gtag('config', 'G-DK1JEYQNED');
 </script>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>Tennis Tracker · Berimbau</title>
+<title>Tennis Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#46543C;--panel:#FBFAF4;--line:rgba(35,42,30,.09);--line2:rgba(35,42,30,.14);--tx:#232A1E;--tx2:#3A4433;--mut:#7A8471;--mut2:#6B7562;--dim:#98A08D;--teal:#4F7A3F;--red:#B96246;--amber:#C08A2E;--purp:#5F7BB0;--purp2:#54719F}
@@ -125,11 +125,12 @@ h2.tname{letter-spacing:-.01em}
 "use strict";
 /* ============ SEED DATA (v10 — 26 partidos) ============ */
 const SEED = [
-  { id:"f1", name:"Partidos Amistosos", category:"AMI", venue:"Club Berimbau", format:"Singles amistosos", status:"En curso", friendly:true, matches:[] },
+  { id:"f1", name:"Partidos Amistosos", category:"AMI", venue:"", format:"Singles amistosos", status:"En curso", friendly:true, matches:[] },
 ];
 const DEFAULT_SKILLS = { sacPlano:5, sacSlice:5, sacKick:5, dhTopspin:5, dhPlano:5, revSlice:5, revTopspin:5, volea:5, globo:5, dropshot:5, approach:5, footwork:5, mentalidad:5 };
 const LS_PLAYER = "tt-player-v1";
-const DEFAULT_PLAYER = { name:"Jugador", age:"", hand:"Diestro" };
+const DEFAULT_PLAYER = { name:"Jugador", age:"", hand:"Diestro", clubs:[] };
+const LEGACY_VENUE = "Club Berimbau"; // sede asignada a respaldos CSV antiguos (sin columna Sede)
 const CC = { C:"#4F7A3F", B:"#C08A2E", AMI:"#5F7BB0", A:"#C46A9A" };
 const LS_DATA = "tt-data-v1", LS_SKILLS = "tt-skills-v1";
 
@@ -158,25 +159,32 @@ function initials(n){ const w=String(n||"").trim().split(/\s+/).filter(Boolean);
 function csvEsc(v){ const s=String(v??""); return (s.includes("|")||s.includes('"')||s.includes("\n")) ? '"'+s.replace(/"/g,'""')+'"' : s; }
 function csvUnesc(v){ let s=String(v??"").trim(); if(s.startsWith('"')&&s.endsWith('"')){ s=s.slice(1,-1).replace(/""/g,'"'); } return s; }
 function generateCSV(tournaments){
-  const headers=["Fecha","Torneo","Categoría","Tipo","Ronda","Rival","Marcador","Resultado","Sets W","Sets L","Games W","Games L"];
+  const headers=["Fecha","Torneo","Sede","Categoría","Tipo","Ronda","Rival","Marcador","Resultado","Sets W","Sets L","Games W","Games L"];
   const rows=[];
   tournaments.forEach(t=>{ t.matches.forEach(m=>{
     const s=parseScore(m.score);
-    rows.push([m.date, t.name, t.friendly?"Amistoso":("Clase "+t.category), t.friendly?"Amistoso":"Competitivo", m.round||"—", m.opponent, m.score, m.won?"Victoria":"Derrota", s.setsWon, s.setsLost, s.gamesWon, s.gamesLost]);
+    rows.push([m.date, t.name, (m.venue!==undefined?m.venue:(t.venue||"")), t.friendly?"Amistoso":("Clase "+t.category), t.friendly?"Amistoso":"Competitivo", m.round||"—", m.opponent, m.score, m.won?"Victoria":"Derrota", s.setsWon, s.setsLost, s.gamesWon, s.gamesLost]);
   });});
   rows.sort((a,b)=>String(a[0]).localeCompare(String(b[0])));
   return [headers.map(csvEsc).join("|")].concat(rows.map(r=>r.map(csvEsc).join("|"))).join("\n");
 }
 function parseCSVImport(text, existingTournaments){
   const lines=text.trim().split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
+  const headerLine=lines.find(l=>l.toLowerCase().startsWith("fecha|"))||"";
+  const headerNew=/\|sede\|/i.test(headerLine);
   const dataLines=lines.filter(l=>!l.toLowerCase().startsWith("fecha|"));
   const errors=[];
   const rows=[];
   dataLines.forEach((l,i)=>{
     const cols=l.split("|").map(csvUnesc);
-    if(cols.length<8){ errors.push("Línea "+(i+1)+": columnas insuficientes"); return; }
+    const nf=headerNew || cols.length>=13;
+    if(cols.length<(nf?9:8)){ errors.push("Línea "+(i+1)+": columnas insuficientes"); return; }
     if(!/^\d{4}-\d{2}-\d{2}$/.test(cols[0])){ errors.push("Línea "+(i+1)+": fecha inválida '"+cols[0]+"'"); return; }
-    rows.push({ date:cols[0], tName:cols[1], cat:cols[2], tipo:cols[3], round:cols[4]||"—", opponent:cols[5], score:cols[6], won:cols[7].trim()==="Victoria" });
+    if(nf){
+      rows.push({ date:cols[0], tName:cols[1], venue:(cols[2]||"").trim(), cat:cols[3], tipo:cols[4], round:cols[5]||"—", opponent:cols[6], score:cols[7], won:cols[8].trim()==="Victoria" });
+    } else {
+      rows.push({ date:cols[0], tName:cols[1], venue:LEGACY_VENUE, cat:cols[2], tipo:cols[3], round:cols[4]||"—", opponent:cols[5], score:cols[6], won:cols[7].trim()==="Victoria" });
+    }
   });
   if(!rows.length){ return {ok:false, errors: errors.length?errors:["No se encontraron filas válidas"]}; }
   const byName={}; const order=[];
@@ -191,11 +199,11 @@ function parseCSVImport(text, existingTournaments){
       id: prev ? prev.id : ("imp_t"+(ti+1)),
       name: name,
       category: prev ? prev.category : cat,
-      venue: prev ? prev.venue : "Club Berimbau",
+      venue: prev ? (prev.venue||rws[0].venue||"") : (rws[0].venue||""),
       format: prev ? prev.format : (friendly ? "Singles amistosos" : "—"),
       status: prev ? prev.status : "En curso",
       friendly: friendly,
-      matches: rws.map(r=>{ mc++; return { id:"imp_m"+mc, date:r.date, opponent:r.opponent, score:r.score, won:r.won, round:r.round }; })
+      matches: rws.map(r=>{ mc++; return { id:"imp_m"+mc, date:r.date, opponent:r.opponent, score:r.score, won:r.won, round:r.round, venue:r.venue }; })
     };
   });
   return {ok:true, tournaments:tournaments, count:rows.length, errors:errors};
@@ -268,6 +276,19 @@ function loadAll(){
   try{ const d=localStorage.getItem(LS_DATA); if(d){ const p=JSON.parse(d); if(Array.isArray(p)&&p.length){ state.tournaments=p; } } else { saveData(); } }catch(e){}
   try{ const s=localStorage.getItem(LS_SKILLS); if(s){ state.skills=Object.assign({}, DEFAULT_SKILLS, JSON.parse(s)); } }catch(e){}
   try{ const p=localStorage.getItem(LS_PLAYER); if(p){ state.player=Object.assign({}, DEFAULT_PLAYER, JSON.parse(p)); } }catch(e){}
+  // Migración: sedes por partido + clubs del jugador derivados de sus datos
+  var _mig=false;
+  state.tournaments.forEach(function(t){ t.matches.forEach(function(m){ if(m.venue===undefined){ m.venue=t.venue||""; _mig=true; } }); });
+  if(_mig) saveData();
+  if(!state.player.clubs || !Array.isArray(state.player.clubs)) state.player.clubs=[];
+  if(!state.player.clubs.length){
+    var _vs=[];
+    state.tournaments.forEach(function(t){
+      var v=(t.venue||"").trim(); if(v&&_vs.indexOf(v)<0)_vs.push(v);
+      t.matches.forEach(function(m){ var mv=(m.venue||"").trim(); if(mv&&_vs.indexOf(mv)<0)_vs.push(mv); });
+    });
+    if(_vs.length){ state.player.clubs=_vs; savePlayer(); }
+  }
   state.profile = calcProfileData(state.skills);
 }
 
@@ -308,7 +329,7 @@ function matchRow(m, showRound){
   return '<div class="mr" onclick="openEdit(\''+m.tournamentId+'\',\''+m.id+'\')">'
     +'<div class="wl '+cls+'">'+(m.won?"W":"L")+'</div>'
     +'<div style="flex:1;min-width:0"><div class="mtop">'+esc(m.opponent)+(f?'<span class="badge">Amistoso</span>':'')+'</div>'
-    +'<div class="msub">'+fmtDate(m.date)+(showRound&&m.round?' · '+esc(m.round):'')+(m.category&&!showRound&&!f?' <span style="color:'+CC[m.category]+';font-size:10px;font-weight:600">Clase '+m.category+'</span>':'')+'</div></div>'
+    +'<div class="msub">'+fmtDate(m.date)+(showRound&&m.round?' · '+esc(m.round):'')+(showRound&&m.venue&&m.venue!==(m._tv||'')?' · '+esc(m.venue):'')+(m.category&&!showRound&&!f?' <span style="color:'+CC[m.category]+';font-size:10px;font-weight:600">Clase '+m.category+'</span>':'')+'</div></div>'
     +'<div class="score" style="color:'+scoreColor+'">'+esc(m.score)+'</div>'
     +'<span style="font-size:10px;color:var(--dim);margin-left:8px">✎</span></div>';
 }
@@ -497,10 +518,10 @@ function viewTorneoDetail(d){
   else h+='<span class="pill" style="background:'+CC[t.category]+'20;color:'+CC[t.category]+';font-weight:700;font-size:11px;padding:3px 8px">Clase '+t.category+'</span>';
   if(t.status==="En curso")h+='<span style="font-size:10px;color:var(--teal)">● En curso</span>';
   h+='</div><h2 class="tname">'+esc(t.name)+'</h2>';
-  h+='<div style="font-size:12px;color:var(--mut);margin-bottom:12px">'+esc(t.format)+' · '+esc(t.venue)+'</div>';
+  h+='<div style="font-size:12px;color:var(--mut);margin-bottom:12px">'+esc(t.format)+(t.venue?' · '+esc(t.venue):'')+'</div>';
   if(!t.friendly){ h+='<div style="margin-bottom:16px"><button class="seg" onclick="toggleTStatus(\''+t.id+'\')">'+(t.status==="En curso"?"✔ Marcar como Finalizado":"↺ Reabrir torneo")+'</button></div>'; }
   h+='<div class="grid3">'+scCard("W–L",tw+"–"+tl,t.friendly?"var(--purp)":null,null,true)+scCard("Games",gw+"–"+gl,null,null,true)+scCard("Sets",sw+"–"+sl,null,null,true)+'</div>';
-  t.matches.forEach(m=>{h+=matchRow(Object.assign({},m,{tournamentId:t.id,category:t.category,friendly:t.friendly}),true);});
+  t.matches.forEach(m=>{h+=matchRow(Object.assign({},m,{tournamentId:t.id,category:t.category,friendly:t.friendly,_tv:t.venue}),true);});
   return h;
 }
 function viewRivales(d){
@@ -531,7 +552,7 @@ function viewPerfil(d){
     +'<div style="display:flex;align-items:center;gap:16px">'
     +'<div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#CBE54E,#8FB84A);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#1E2A16;flex-shrink:0">'+esc(initials(state.player.name))+'</div>'
     +'<div style="flex:1;min-width:0"><h2 style="font-size:19px;font-family:\'Fraunces\',Georgia,serif;font-weight:600;margin-bottom:2px">'+esc(state.player.name)+'</h2>'
-    +'<div style="font-size:12px;color:var(--mut)">'+(state.player.age?esc(state.player.age)+' años · ':'')+esc(state.player.hand)+'</div></div>'
+    +'<div style="font-size:12px;color:var(--mut)">'+(state.player.age?esc(state.player.age)+' años · ':'')+esc(state.player.hand)+((state.player.clubs&&state.player.clubs.length)?' · '+esc(state.player.clubs[0]):'')+'</div></div>'
     +'<button class="seg" onclick="openPlayerEdit()">✎ Editar</button></div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:20px">'
     +'<div style="text-align:center"><div style="font-size:18px;font-weight:700;color:var(--teal)">'+d.cW+'W–'+d.cL+'L</div><div style="font-size:10px;color:var(--mut)">Competitivo</div></div>'
@@ -596,7 +617,7 @@ function viewPerfil(d){
 function viewAgregar(d){
   const active=state.tournaments.filter(t=>t.status==="En curso"||t.friendly);
   let h='<div class="lbl">Registrar partido</div>';
-  h+='<div class="fld"><label class="flbl">Torneo / Amistoso</label><select class="inp" id="f-tid"><option value="">Seleccionar...</option>';
+  h+='<div class="fld"><label class="flbl">Torneo / Amistoso</label><select class="inp" id="f-tid" onchange="syncSede()"><option value="">Seleccionar...</option>';
   active.forEach(t=>{
     const emoji=t.friendly?"🟣 ":(t.category==="C"?"🟢 ":"🟡 ");
     h+='<option value="'+t.id+'">'+emoji+esc(t.name)+'</option>';
@@ -604,6 +625,7 @@ function viewAgregar(d){
   h+='</select></div>';
   h+='<div class="fld"><label class="flbl">Rival</label><input class="inp" id="f-opp" type="text" placeholder="Nombre del rival"></div>';
   h+='<div class="fld"><label class="flbl">Fecha</label><input class="inp" id="f-date" type="date" value="'+new Date().toISOString().split("T")[0]+'"></div>';
+  h+='<div class="fld"><label class="flbl">Sede / Club</label>'+clubOptions("f-sede","f-sede-otro")+'</div>';
   h+='<div class="fld"><label class="flbl">Marcador (mis games – rival)</label>';
   for(let i=1;i<=3;i++){
     h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
@@ -621,6 +643,7 @@ function viewAgregar(d){
   h+='<div style="margin-top:34px;padding-top:18px;border-top:1px solid var(--line)"><div class="lbl">Nuevo torneo</div>';
   h+='<div class="fld"><label class="flbl">Nombre (YYYY_MM_Cat_Nombre)</label><input class="inp" id="t-name" type="text" placeholder="Ej: 2026_08_B_Verano"></div>';
   h+='<div class="fld"><label class="flbl">Categoría</label><select class="inp" id="t-cat"><option value="C">Clase C</option><option value="B">Clase B</option><option value="A">Clase A</option></select></div>';
+  h+='<div class="fld"><label class="flbl">Sede / Club</label>'+clubOptions("t-sede","t-sede-otro")+'</div>';
   h+='<div class="fld" style="margin-bottom:20px"><label class="flbl">Formato (opcional)</label><input class="inp" id="t-fmt" type="text" placeholder="Ej: Round Robin, Eliminación directa..."></div>';
   h+='<button class="btn amber" onclick="submitTournament()">Crear Torneo</button></div>';
   h+='<div style="margin-top:34px;padding-top:16px;border-top:1px solid var(--line)">'
@@ -629,6 +652,43 @@ function viewAgregar(d){
 }
 
 /* ============ ACTIONS ============ */
+function clubOptions(selId, otherId){
+  var clubs=(state.player.clubs||[]);
+  var h='<select class="inp" id="'+selId+'" onchange="sedeSel(\''+selId+'\',\''+otherId+'\')">';
+  if(clubs.length){
+    clubs.forEach(function(c,i){ h+='<option value="'+esc(c)+'"'+(i===0?' selected':'')+'>'+esc(c)+'</option>'; });
+    h+='<option value="__otro__">✎ Otra sede…</option></select>';
+    h+='<input class="inp" id="'+otherId+'" type="text" placeholder="Nombre del club / sede" style="margin-top:8px;display:none">';
+  } else {
+    h+='<option value="__otro__" selected>✎ Escribir sede…</option></select>';
+    h+='<input class="inp" id="'+otherId+'" type="text" placeholder="Nombre del club / sede" style="margin-top:8px">';
+  }
+  return h;
+}
+function sedeSel(selId, otherId){
+  var s=document.getElementById(selId), o=document.getElementById(otherId);
+  if(s&&o) o.style.display = s.value==="__otro__" ? "block" : "none";
+}
+function readSede(selId, otherId){
+  var s=document.getElementById(selId); if(!s) return "";
+  var v=s.value;
+  if(v==="__otro__"){ var o=document.getElementById(otherId); v=o?(o.value||"").trim():""; }
+  return v;
+}
+function ensureClub(v){
+  if(!v) return;
+  state.player.clubs=state.player.clubs||[];
+  if(state.player.clubs.indexOf(v)<0){ state.player.clubs.push(v); savePlayer(); }
+}
+function syncSede(){
+  var tid=document.getElementById("f-tid").value;
+  var t=state.tournaments.find(function(x){return x.id===tid;});
+  if(!t) return;
+  var v=(t.venue||"").trim();
+  var s=document.getElementById("f-sede");
+  if(!s||!v) return;
+  for(var i=0;i<s.options.length;i++){ if(s.options[i].value===v){ s.value=v; sedeSel("f-sede","f-sede-otro"); return; } }
+}
 function toast(msg){
   const old=document.querySelector(".toast"); if(old)old.remove();
   const t=document.createElement("div"); t.className="toast"; t.textContent=msg;
@@ -666,7 +726,9 @@ function submitMatch(){
   if(!date){toast("Selecciona la fecha");return;}
   if(sets.length<2){toast("Captura al menos 2 sets completos");return;}
   if(state.formWon===null){toast("Marca Victoria o Derrota");return;}
-  const match={ id:"u_"+Date.now(), date:date, opponent:opp, score:sets.join(", "), won:state.formWon, round:round||"—" };
+  const sede=readSede("f-sede","f-sede-otro");
+  const match={ id:"u_"+Date.now(), date:date, opponent:opp, score:sets.join(", "), won:state.formWon, round:round||"—", venue:sede };
+  ensureClub(sede);
   state.tournaments=state.tournaments.map(t=>t.id===tid?Object.assign({},t,{matches:t.matches.concat([match])}):t);
   saveData();
   state.formWon=null;
@@ -678,7 +740,9 @@ function submitTournament(){
   const cat=document.getElementById("t-cat").value;
   const fmt=document.getElementById("t-fmt").value.trim();
   if(!name){toast("Escribe el nombre del torneo");return;}
-  state.tournaments=state.tournaments.concat([{ id:"u_t"+Date.now(), name:name, category:cat, venue:"Club Berimbau", format:fmt||"En curso", status:"En curso", friendly:false, matches:[] }]);
+  const sede=readSede("t-sede","t-sede-otro");
+  ensureClub(sede);
+  state.tournaments=state.tournaments.concat([{ id:"u_t"+Date.now(), name:name, category:cat, venue:sede||"", format:fmt||"En curso", status:"En curso", friendly:false, matches:[] }]);
   saveData();
   toast("Torneo creado ✓");
   render();
@@ -695,6 +759,7 @@ function openEdit(tid, mid){
     +'<div class="fld"><label class="flbl">Fecha</label><input class="inp" id="e-date" type="date" value="'+m.date+'"></div>'
     +'<div class="fld"><label class="flbl">Marcador</label><input class="inp" id="e-score" type="text" value="'+esc(m.score)+'" placeholder="6-3, 6-2"></div>'
     +'<div class="fld"><label class="flbl">Ronda</label><input class="inp" id="e-round" type="text" value="'+esc(m.round||"")+'"></div>'
+    +'<div class="fld"><label class="flbl">Sede / Club</label><input class="inp" id="e-sede" type="text" value="'+esc(m.venue||"")+'" placeholder="Club / sede"></div>'
     +'<div class="fld" style="margin-bottom:20px"><label class="flbl">Resultado</label><div style="display:flex;gap:8px">'
     +'<button class="tgl'+(m.won?' won':'')+'" id="e-btnW" onclick="ePickWon(true)">Victoria ✓</button>'
     +'<button class="tgl'+(!m.won?' lost':'')+'" id="e-btnL" onclick="ePickWon(false)">Derrota ✗</button></div></div>'
@@ -713,8 +778,10 @@ function saveEdit(tid, mid){
   const date=document.getElementById("e-date").value;
   const score=document.getElementById("e-score").value.trim();
   const round=document.getElementById("e-round").value.trim();
+  const sede=document.getElementById("e-sede").value.trim();
   if(!opp||!score||!date){toast("Completa rival, fecha y marcador");return;}
-  state.tournaments=state.tournaments.map(t=>t.id===tid?Object.assign({},t,{matches:t.matches.map(m=>m.id===mid?Object.assign({},m,{opponent:opp,date:date,score:score,round:round||"—",won:window._editWon}):m)}):t);
+  ensureClub(sede);
+  state.tournaments=state.tournaments.map(t=>t.id===tid?Object.assign({},t,{matches:t.matches.map(m=>m.id===mid?Object.assign({},m,{opponent:opp,date:date,score:score,round:round||"—",venue:sede,won:window._editWon}):m)}):t);
   saveData(); closeModal(); toast("Partido actualizado ✓"); render();
 }
 function deleteEdit(tid, mid){
@@ -730,28 +797,53 @@ function toggleTStatus(tid){
   state.tournaments=state.tournaments.map(t=>t.id===tid?Object.assign({},t,{status:t.status==="En curso"?"Finalizado":"En curso"}):t);
   saveData(); toast("Estado del torneo actualizado ✓"); render();
 }
-function openPlayerEdit(){
+function openPlayerEdit(keep){
   const p=state.player;
+  if(!keep) window._pClubs=(p.clubs||[]).slice();
   const root=document.getElementById("modal-root");
+  var prevN=keep?document.getElementById("p-name").value:esc(p.name);
+  var prevA=keep?document.getElementById("p-age").value:esc(p.age);
+  var prevH=keep?document.getElementById("p-hand").value:p.hand;
+  var chips='';
+  window._pClubs.forEach(function(c,i){
+    chips+='<span style="display:inline-flex;align-items:center;gap:6px;background:rgba(79,122,63,.12);border:1px solid rgba(79,122,63,.3);color:#33511F;border-radius:16px;padding:5px 10px;font-size:13px;font-weight:600;margin:0 6px 6px 0">'+esc(c)
+      +'<span onclick="rmClub('+i+')" style="cursor:pointer;font-weight:800;color:#B96246">×</span></span>';
+  });
+  if(!chips) chips='<span style="font-size:12px;color:var(--mut)">Sin clubs aún — agrega el tuyo</span>';
   root.innerHTML='<div class="modal-back" onclick="closeModal(event)">'
     +'<div class="sheet" onclick="event.stopPropagation()">'
     +'<div class="handle"></div>'
     +'<div style="font-size:16px;font-weight:600;margin-bottom:16px">Mi perfil</div>'
-    +'<div class="fld"><label class="flbl">Nombre</label><input class="inp" id="p-name" type="text" value="'+esc(p.name)+'" placeholder="Tu nombre"></div>'
-    +'<div class="fld"><label class="flbl">Edad (opcional)</label><input class="inp" id="p-age" type="text" inputmode="numeric" maxlength="3" value="'+esc(p.age)+'" placeholder="—"></div>'
-    +'<div class="fld" style="margin-bottom:20px"><label class="flbl">Mano</label><select class="inp" id="p-hand">'
-    +'<option value="Diestro"'+(p.hand==="Diestro"?" selected":"")+'>Diestro</option>'
-    +'<option value="Zurdo"'+(p.hand==="Zurdo"?" selected":"")+'>Zurdo</option></select></div>'
+    +'<div class="fld"><label class="flbl">Nombre</label><input class="inp" id="p-name" type="text" value="'+prevN+'" placeholder="Tu nombre"></div>'
+    +'<div class="fld"><label class="flbl">Edad (opcional)</label><input class="inp" id="p-age" type="text" inputmode="numeric" maxlength="3" value="'+prevA+'" placeholder="—"></div>'
+    +'<div class="fld"><label class="flbl">Mano</label><select class="inp" id="p-hand">'
+    +'<option value="Diestro"'+(prevH==="Diestro"?" selected":"")+'>Diestro</option>'
+    +'<option value="Zurdo"'+(prevH==="Zurdo"?" selected":"")+'>Zurdo</option></select></div>'
+    +'<div class="fld" style="margin-bottom:20px"><label class="flbl">Mis clubs (el primero es tu club principal)</label>'
+    +'<div style="margin-bottom:8px">'+chips+'</div>'
+    +'<div style="display:flex;gap:8px"><input class="inp" id="p-club-new" type="text" placeholder="Nombre de tu club" style="flex:1">'
+    +'<button class="seg on" style="flex-shrink:0" onclick="addClub()">+ Agregar</button></div></div>'
     +'<button class="btn teal" style="margin-bottom:12px" onclick="savePlayerEdit()">Guardar</button>'
     +'<button style="width:100%;padding:12px;font-size:13px;background:rgba(35,42,30,.04);border:1px solid rgba(35,42,30,.08);border-radius:8px;color:var(--mut);cursor:pointer;font-family:inherit" onclick="closeModal()">Cancelar</button>'
     +'</div></div>';
+}
+function addClub(){
+  var v=(document.getElementById("p-club-new").value||"").trim();
+  if(!v){toast("Escribe el nombre del club");return;}
+  if(window._pClubs.indexOf(v)>=0){toast("Ese club ya está en tu lista");return;}
+  window._pClubs.push(v);
+  openPlayerEdit(true);
+}
+function rmClub(i){
+  window._pClubs.splice(i,1);
+  openPlayerEdit(true);
 }
 function savePlayerEdit(){
   const name=document.getElementById("p-name").value.trim();
   const age=document.getElementById("p-age").value.replace(/[^0-9]/g,"");
   const hand=document.getElementById("p-hand").value;
   if(!name){toast("Escribe tu nombre");return;}
-  state.player={name:name,age:age,hand:hand};
+  state.player={name:name,age:age,hand:hand,clubs:window._pClubs.slice()};
   savePlayer(); closeModal(); toast("Perfil guardado ✓"); render();
 }
 function openExport(){
