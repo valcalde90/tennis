@@ -168,8 +168,32 @@ function generateCSV(tournaments){
   rows.sort((a,b)=>String(a[0]).localeCompare(String(b[0])));
   return [headers.map(csvEsc).join("|")].concat(rows.map(r=>r.map(csvEsc).join("|"))).join("\n");
 }
+function fixMojibake(s){
+  if(!/[\u00C2\u00C3\u00E2\u0080-\u009F]/.test(s)) return s;
+  try{
+    var cp={"\u20AC":0x80,"\u201A":0x82,"\u0192":0x83,"\u201E":0x84,"\u2026":0x85,"\u2020":0x86,"\u2021":0x87,"\u02C6":0x88,"\u2030":0x89,"\u0160":0x8A,"\u2039":0x8B,"\u0152":0x8C,"\u017D":0x8E,"\u2018":0x91,"\u2019":0x92,"\u201C":0x93,"\u201D":0x94,"\u2022":0x95,"\u2013":0x96,"\u2014":0x97,"\u02DC":0x98,"\u2122":0x99,"\u0161":0x9A,"\u203A":0x9B,"\u0153":0x9C,"\u017E":0x9E,"\u0178":0x9F};
+    var bytes=new Uint8Array(s.length);
+    for(var bi=0;bi<s.length;bi++){
+      var code=s.charCodeAt(bi);
+      if(code<=0xFF) bytes[bi]=code;
+      else if(cp[s[bi]]!==undefined) bytes[bi]=cp[s[bi]];
+      else return s;
+    }
+    var dec=new TextDecoder("utf-8",{fatal:true}).decode(bytes);
+    return /[\u00C3\u00E2\u0080-\u009F]/.test(dec) ? s : dec;
+  }catch(e){ return s; }
+}
 function parseCSVImport(text, existingTournaments){
-  const lines=text.trim().split(/\r?\n/).map(l=>l.trim()).filter(l=>l);
+  if(text.charCodeAt(0)===0xFEFF) text=text.slice(1);
+  const rawLines=text.split(/\r?\n/);
+  const lines=[];
+  rawLines.forEach(function(l){
+    var t=l.trim();
+    if(!t) return;
+    if(/^\d{4}-\d{2}-\d{2}\|/.test(t) || t.toLowerCase().startsWith("fecha|") || !lines.length){ lines.push(l); }
+    else { lines[lines.length-1]+=l; }
+  });
+  for(var _li=0; _li<lines.length; _li++) lines[_li]=fixMojibake(lines[_li].trim());
   const headerLine=lines.find(l=>l.toLowerCase().startsWith("fecha|"))||"";
   const headerNew=/\|sede\|/i.test(headerLine);
   const dataLines=lines.filter(l=>!l.toLowerCase().startsWith("fecha|"));
@@ -179,7 +203,7 @@ function parseCSVImport(text, existingTournaments){
     const cols=l.split("|").map(csvUnesc);
     const nf=headerNew || cols.length>=13;
     if(cols.length<(nf?9:8)){ errors.push("Línea "+(i+1)+": columnas insuficientes"); return; }
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(cols[0])){ errors.push("Línea "+(i+1)+": fecha inválida '"+cols[0]+"'"); return; }
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(cols[0]) || +cols[0].slice(5,7)<1 || +cols[0].slice(5,7)>12 || +cols[0].slice(8,10)<1 || +cols[0].slice(8,10)>31){ errors.push("Línea "+(i+1)+": fecha inválida '"+cols[0]+"'"); return; }
     if(nf){
       rows.push({ date:cols[0], tName:cols[1], venue:(cols[2]||"").trim(), cat:cols[3], tipo:cols[4], round:cols[5]||"—", opponent:cols[6], score:cols[7], won:cols[8].trim()==="Victoria" });
     } else {
@@ -187,6 +211,7 @@ function parseCSVImport(text, existingTournaments){
     }
   });
   if(!rows.length){ return {ok:false, errors: errors.length?errors:["No se encontraron filas válidas"]}; }
+  if(errors.length){ return {ok:false, errors: errors}; }
   const byName={}; const order=[];
   rows.forEach(r=>{ if(!byName[r.tName]){ byName[r.tName]=[]; order.push(r.tName); } byName[r.tName].push(r); });
   let mc=0;
@@ -935,22 +960,32 @@ function openImport(){
     +'<div class="sheet" onclick="event.stopPropagation()">'
     +'<div class="handle"></div>'
     +'<div style="font-size:17px;font-weight:600;text-align:center;margin-bottom:4px">Importar CSV</div>'
-    +'<div style="font-size:12px;color:var(--mut);text-align:center;margin-bottom:16px">Pega tu backup separado por pipes | — reemplaza todos los datos actuales</div>'
-    +'<textarea class="inp" id="imp-text" placeholder="Fecha|Torneo|Categoría|Tipo|Ronda|Rival|Marcador|Resultado|..."></textarea>'
+    +'<div style="font-size:12px;color:var(--mut);text-align:center;margin-bottom:14px">Reemplaza todos los datos actuales. Si hay errores, no se importa nada.</div>'
+    +'<input type="file" id="imp-file" accept=".csv,text/csv,text/plain" style="display:none" onchange="impFile(event)">'
+    +'<button class="btn amber" style="margin-bottom:10px" onclick="document.getElementById(\'imp-file\').click()">📄 Elegir archivo CSV</button>'
+    +'<div style="font-size:11px;color:var(--mut2);text-align:center;margin-bottom:8px">o pega el contenido aquí</div>'
+    +'<textarea class="inp" id="imp-text" placeholder="Fecha|Torneo|Sede|Categoría|Tipo|Ronda|Rival|Marcador|..."></textarea>'
     +'<button class="btn teal" style="margin-top:14px;margin-bottom:10px" onclick="doImport()">Importar datos</button>'
     +'<button style="width:100%;padding:12px;font-size:13px;background:rgba(35,42,30,.04);border:1px solid rgba(35,42,30,.08);border-radius:8px;color:var(--mut);cursor:pointer;font-family:inherit" onclick="closeModal()">Cancelar</button>'
     +'</div></div>';
 }
+function impFile(ev){
+  var f=ev.target.files&&ev.target.files[0];
+  if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){ document.getElementById("imp-text").value=r.result; toast("Archivo cargado ✓ — toca Importar datos"); };
+  r.onerror=function(){ toast("No se pudo leer el archivo"); };
+  r.readAsText(f);
+}
 function doImport(){
   const text=document.getElementById("imp-text").value;
-  if(!text.trim()){toast("Pega el CSV primero");return;}
+  if(!text.trim()){toast("Elige el archivo o pega el CSV primero");return;}
   const result=parseCSVImport(text, state.tournaments.length?state.tournaments:SEED);
-  if(!result.ok){ alert("No se pudo importar:\n"+result.errors.join("\n")); return; }
+  if(!result.ok){ alert("No se importó NADA — tus datos actuales quedan intactos.\n\nErrores encontrados:\n"+result.errors.join("\n")); return; }
   if(!confirm("Se importarán "+result.count+" partidos en "+result.tournaments.length+" torneos, REEMPLAZANDO los datos actuales. ¿Continuar?"))return;
   state.tournaments=result.tournaments;
   saveData(); closeModal();
   toast("✓ "+result.count+" partidos importados");
-  if(result.errors.length){ setTimeout(()=>alert("Advertencias:\n"+result.errors.join("\n")), 400); }
   render();
 }
 function resetSeed(){
