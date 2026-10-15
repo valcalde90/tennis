@@ -544,7 +544,7 @@ function viewTorneoDetail(d){
   if(t.status==="En curso")h+='<span style="font-size:10px;color:var(--teal)">● En curso</span>';
   h+='</div><h2 class="tname">'+esc(t.name)+'</h2>';
   h+='<div style="font-size:12px;color:var(--mut);margin-bottom:12px">'+esc(t.format)+(t.venue?' · '+esc(t.venue):'')+'</div>';
-  if(!t.friendly){ h+='<div style="margin-bottom:16px"><button class="seg" onclick="toggleTStatus(\''+t.id+'\')">'+(t.status==="En curso"?"✔ Marcar como Finalizado":"↺ Reabrir torneo")+'</button></div>'; }
+  if(!t.friendly){ h+='<div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap"><button class="seg" onclick="toggleTStatus(\''+t.id+'\')">'+(t.status==="En curso"?"✔ Marcar como Finalizado":"↺ Reabrir torneo")+'</button><button class="seg" onclick="openTEdit(\''+t.id+'\')">✎ Editar</button></div>'; }
   h+='<div class="grid3">'+scCard("W–L",tw+"–"+tl,t.friendly?"var(--purp)":null,null,true)+scCard("Games",gw+"–"+gl,null,null,true)+scCard("Sets",sw+"–"+sl,null,null,true)+'</div>';
   t.matches.forEach(m=>{h+=matchRow(Object.assign({},m,{tournamentId:t.id,category:t.category,friendly:t.friendly,_tv:t.venue}),true);});
   return h;
@@ -827,6 +827,43 @@ function deleteEdit(tid, mid){
 function closeModal(ev){
   if(ev&&ev.target&&!ev.target.classList.contains("modal-back"))return;
   document.getElementById("modal-root").innerHTML="";
+}
+function openTEdit(tid){
+  var t=state.tournaments.find(function(x){return x.id===tid;});
+  if(!t||t.friendly) return;
+  window._tEditId=tid;
+  var root=document.getElementById("modal-root");
+  root.innerHTML='<div class="modal-back" onclick="closeModal(event)">'
+    +'<div class="sheet" onclick="event.stopPropagation()">'
+    +'<div class="handle"></div>'
+    +'<div style="font-size:16px;font-weight:600;margin-bottom:16px">Editar torneo</div>'
+    +'<div class="fld"><label class="flbl">Nombre</label><input class="inp" id="te-name" type="text" value="'+esc(t.name)+'"></div>'
+    +'<div class="fld"><label class="flbl">Categoría</label><select class="inp" id="te-cat">'
+    +'<option value="C"'+(t.category==="C"?" selected":"")+'>Clase C</option>'
+    +'<option value="B"'+(t.category==="B"?" selected":"")+'>Clase B</option>'
+    +'<option value="A"'+(t.category==="A"?" selected":"")+'>Clase A</option></select></div>'
+    +'<div class="fld"><label class="flbl">Sede / Club</label><input class="inp" id="te-sede" type="text" value="'+esc(t.venue||"")+'" placeholder="Club / sede"></div>'
+    +'<div class="fld" style="margin-bottom:20px"><label class="flbl">Formato (opcional)</label><input class="inp" id="te-fmt" type="text" value="'+esc(t.format||"")+'"></div>'
+    +'<button class="btn teal" style="margin-bottom:12px" onclick="saveTEdit()">Guardar</button>'
+    +'<button style="width:100%;padding:12px;font-size:13px;background:rgba(35,42,30,.04);border:1px solid rgba(35,42,30,.08);border-radius:8px;color:var(--mut);cursor:pointer;font-family:inherit" onclick="closeModal()">Cancelar</button>'
+    +'</div></div>';
+}
+function saveTEdit(){
+  var tid=window._tEditId;
+  var name=document.getElementById("te-name").value.trim();
+  var cat=document.getElementById("te-cat").value;
+  var sede=document.getElementById("te-sede").value.trim();
+  var fmt=document.getElementById("te-fmt").value.trim();
+  if(!name){toast("Escribe el nombre del torneo");return;}
+  if(state.tournaments.some(function(x){return x.id!==tid && x.name===name;})){toast("Ya existe un torneo con ese nombre");return;}
+  ensureClub(sede);
+  state.tournaments=state.tournaments.map(function(x){
+    if(x.id!==tid) return x;
+    var oldV=x.venue||"";
+    return Object.assign({},x,{name:name,category:cat,venue:sede,format:fmt||x.format,
+      matches:x.matches.map(function(m){ return (m.venue||"")===oldV?Object.assign({},m,{venue:sede}):m; })});
+  });
+  saveData(); closeModal(); toast("Torneo actualizado ✓"); render();
 }
 function toggleTStatus(tid){
   state.tournaments=state.tournaments.map(t=>t.id===tid?Object.assign({},t,{status:t.status==="En curso"?"Finalizado":"En curso"}):t);
