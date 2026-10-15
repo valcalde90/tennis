@@ -526,12 +526,22 @@ function viewTorneoDetail(d){
 }
 function viewRivales(d){
   const entries=Object.entries(d.opps).sort((a,b)=>(b[1].cW+b[1].cL+b[1].fW+b[1].fL)-(a[1].cW+a[1].cL+a[1].fW+a[1].fL));
+  window._rivNames = entries.map(function(e){ return e[0]; });
   let h='<div class="lbl">'+entries.length+' rivales</div>';
-  entries.forEach(pair=>{
+  const nmap={};
+  entries.forEach(function(pair){ const k=normName(pair[0]); (nmap[k]=nmap[k]||[]).push(pair[0]); });
+  const dups=Object.keys(nmap).map(function(k){return nmap[k];}).filter(function(g){return g.length>1;});
+  if(dups.length){
+    h+='<div style="background:rgba(192,138,46,.1);border:1px solid rgba(192,138,46,.3);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--amber)">⚠ Posibles duplicados: '
+      +dups.map(function(g){return g.map(esc).join(' / ');}).join(' · ')
+      +' — usa ✎ para fusionarlos</div>';
+  }
+  entries.forEach((pair,ri)=>{
     const name=pair[0], dd=pair[1];
     h+='<div style="padding:12px 16px;background:rgba(35,42,30,.02);border:1px solid var(--line);border-radius:10px;margin-bottom:8px">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
-      +'<span style="font-size:14px;font-weight:500">'+esc(name)+'</span>'
+      +'<span style="font-size:14px;font-weight:500;display:inline-flex;align-items:center;gap:8px">'+esc(name)
+      +'<span onclick="openRivalEdit(window._rivNames['+ri+'])" style="cursor:pointer;font-size:12px;opacity:.5">✎</span></span>'
       +'<div style="display:flex;align-items:center;gap:10px">'
       +'<span style="font-size:13px;font-weight:600;color:'+(dd.cW>dd.cL?"var(--teal)":dd.cW<dd.cL?"var(--red)":"var(--mut2)")+'">'+dd.cW+'W–'+dd.cL+'L</span>'
       +((dd.fW>0||dd.fL>0)?'<span style="font-size:11px;font-weight:500;color:var(--purp)">+'+dd.fW+'W–'+dd.fL+'L ami</span>':'')
@@ -796,6 +806,35 @@ function closeModal(ev){
 function toggleTStatus(tid){
   state.tournaments=state.tournaments.map(t=>t.id===tid?Object.assign({},t,{status:t.status==="En curso"?"Finalizado":"En curso"}):t);
   saveData(); toast("Estado del torneo actualizado ✓"); render();
+}
+function normName(s){ return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim().replace(/\s+/g," "); }
+function openRivalEdit(oldName){
+  var count=0;
+  state.tournaments.forEach(function(t){ t.matches.forEach(function(m){ if(m.opponent===oldName) count++; }); });
+  window._rivOld=oldName;
+  var root=document.getElementById("modal-root");
+  root.innerHTML='<div class="modal-back" onclick="closeModal(event)">'
+    +'<div class="sheet" onclick="event.stopPropagation()">'
+    +'<div class="handle"></div>'
+    +'<div style="font-size:16px;font-weight:600;margin-bottom:6px">Renombrar rival</div>'
+    +'<div style="font-size:12px;color:var(--mut);margin-bottom:16px">'+count+' partido'+(count===1?'':'s')+' se actualizar'+(count===1?'á':'án')+'. Si escribes el nombre de otro rival existente, se fusionarán en uno solo.</div>'
+    +'<div class="fld" style="margin-bottom:20px"><label class="flbl">Nombre</label><input class="inp" id="rv-name" type="text" value="'+esc(oldName)+'"></div>'
+    +'<button class="btn teal" style="margin-bottom:12px" onclick="saveRivalEdit()">Guardar</button>'
+    +'<button style="width:100%;padding:12px;font-size:13px;background:rgba(35,42,30,.04);border:1px solid rgba(35,42,30,.08);border-radius:8px;color:var(--mut);cursor:pointer;font-family:inherit" onclick="closeModal()">Cancelar</button>'
+    +'</div></div>';
+}
+function saveRivalEdit(){
+  var oldName=window._rivOld;
+  var newName=document.getElementById("rv-name").value.trim();
+  if(!newName){toast("Escribe el nombre");return;}
+  if(newName===oldName){closeModal();return;}
+  var oldC=0, newC=0;
+  state.tournaments.forEach(function(t){ t.matches.forEach(function(m){ if(m.opponent===oldName) oldC++; else if(m.opponent===newName) newC++; }); });
+  if(newC>0 && !confirm('Ya existe "'+newName+'" con '+newC+' partido'+(newC===1?'':'s')+'. ¿Fusionar los '+oldC+' de "'+oldName+'" bajo "'+newName+'"?')) return;
+  state.tournaments=state.tournaments.map(function(t){ return Object.assign({},t,{matches:t.matches.map(function(m){ return m.opponent===oldName?Object.assign({},m,{opponent:newName}):m; })}); });
+  saveData(); closeModal();
+  toast(oldC+' partido'+(oldC===1?'':'s')+' actualizado'+(oldC===1?'':'s')+' ✓');
+  render();
 }
 function openPlayerEdit(keep){
   const p=state.player;
