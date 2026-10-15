@@ -31,8 +31,10 @@ h1{font-size:18px;font-family:'Fraunces',Georgia,serif;font-weight:700;letter-sp
 .sub{font-size:10px;color:var(--mut);font-weight:500;letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
 .hbtns{margin-left:auto;display:flex;gap:6px}
 .hbtn{padding:6px 10px;font-size:10px;background:rgba(35,42,30,.04);border:1px solid rgba(35,42,30,.08);border-radius:8px;color:var(--mut);cursor:pointer;font-family:inherit;font-weight:500}
-nav{display:flex;gap:4px;flex-wrap:wrap}
-.navbtn{padding:7px 13px;font-size:11px;font-weight:400;background:transparent;color:var(--mut);border:none;border-radius:6px;cursor:pointer;font-family:inherit;letter-spacing:.02em}
+nav{display:flex;gap:3px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+.navbtn{flex-shrink:0;padding:7px 9px;font-size:11px;font-weight:400;background:transparent;color:var(--mut);border:none;border-radius:6px;cursor:pointer;font-family:inherit;letter-spacing:.02em;text-align:center}
+.navbtn::after{content:attr(data-l);display:block;height:0;overflow:hidden;visibility:hidden;font-weight:700}
 .navbtn.on{background:rgba(35,42,30,.08);color:#fff;font-weight:600}
 .navbtn.add{background:rgba(79,122,63,.08);color:var(--teal);border:1px solid rgba(79,122,63,.2)}
 .navbtn.add.on{background:rgba(35,42,30,.08);color:#fff;border:none}
@@ -373,7 +375,7 @@ function matchRow(m, showRound){
 function renderNav(){
   const views=[["perfil","Perfil"],["dashboard","Rendimiento"],["torneos","Torneos"],["rivales","Rivales"],["agregar","+ Partido"]];
   document.getElementById("nav").innerHTML = views.map(v=>
-    '<button class="navbtn'+(v[0]==="agregar"?' add':'')+(state.view===v[0]?' on':'')+'" onclick="setView(\''+v[0]+'\')">'+v[1]+'</button>'
+    '<button class="navbtn'+(v[0]==="agregar"?' add':'')+(state.view===v[0]?' on':'')+'" data-l="'+v[1]+'" onclick="setView(\''+v[0]+'\')">'+v[1]+'</button>'
   ).join("");
 }
 function render(){
