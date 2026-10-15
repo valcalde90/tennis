@@ -226,7 +226,11 @@ function parseCSVImport(text, existingTournaments){
       category: prev ? prev.category : cat,
       venue: prev ? (prev.venue||rws[0].venue||"") : (rws[0].venue||""),
       format: prev ? prev.format : (friendly ? "Singles amistosos" : "—"),
-      status: prev ? prev.status : "En curso",
+      status: prev ? prev.status : (friendly ? "En curso" : (function(){
+        var last=rws.reduce(function(a,r){return r.date>a?r.date:a;}, rws[0].date);
+        var days=(Date.now()-new Date(last+"T12:00:00").getTime())/86400000;
+        return days>21 ? "Finalizado" : "En curso";
+      })()),
       friendly: friendly,
       matches: rws.map(r=>{ mc++; return { id:"imp_m"+mc, date:r.date, opponent:r.opponent, score:r.score, won:r.won, round:r.round, venue:r.venue }; })
     };
@@ -340,7 +344,7 @@ function derive(){
     else{m.won?opps[m.opponent].cW++:opps[m.opponent].cL++;}
     opps[m.opponent].matches.push(m);
   });
-  return {all,comp,fri,cW,cL,cPct:comp.length?Math.round(cW/comp.length*100):0,fW,fL,gw,gl,sw,sl,streak:tp==="W"?cur:0,bestStreak:best,opps};
+  return {all,comp,fri,cW,cL,cPct:comp.length?Math.round(cW/comp.length*100):0,fW,fL,gw,gl,sw,sl,streak:tp==="W"?cur:0,streakL:tp==="L"?cur:0,bestStreak:best,opps};
 }
 
 /* ============ RENDER ============ */
@@ -380,7 +384,7 @@ function viewDashboard(d){
   let h='<div class="lbl">Récord competitivo</div><div class="grid3">'
     +scCard("Récord", d.cW+"W – "+d.cL+"L","var(--teal)")
     +scCard("Win %", d.cPct+"%", d.cPct>=50?"var(--teal)":"var(--red)")
-    +scCard("Racha", d.streak>0?d.streak+"W 🔥":"—","var(--amber)")+'</div>';
+    +scCard("Racha", d.streak>0?(d.streak+"W 🔥"):(d.streakL>0?(d.streakL+"L"):"—"), d.streak>0?"var(--amber)":(d.streakL>0?"var(--red)":"var(--amber)"))+'</div>';
   h+='<div class="grid2">'
     +scCard("Sets", d.sw+"–"+d.sl, null, (d.sw+d.sl>0?Math.round(d.sw/(d.sw+d.sl)*100):0)+"%")
     +scCard("Games", d.gw+"–"+d.gl, null, (d.gw+d.gl>0?Math.round(d.gw/(d.gw+d.gl)*100):0)+"%")+'</div>';
