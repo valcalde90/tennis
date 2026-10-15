@@ -224,13 +224,14 @@ function parseCSVImport(text, existingTournaments){
   const byName={}; const order=[];
   rows.forEach(r=>{ if(!byName[r.tName]){ byName[r.tName]=[]; order.push(r.tName); } byName[r.tName].push(r); });
   let mc=0;
+  const takenIds={};
   const tournaments=order.map((name,ti)=>{
     const rws=byName[name];
     const friendly = rws[0].tipo.trim()==="Amistoso" || rws[0].cat.trim()==="Amistoso";
     const cat = friendly ? "AMI" : (rws[0].cat.includes("B") ? "B" : (rws[0].cat.includes("A") && !rws[0].cat.includes("C") && rws[0].cat.trim()!=="Amistoso" ? (rws[0].cat.includes("Clase A")?"A":"C") : "C"));
     const prev = (existingTournaments||[]).find(t=>t.name===name);
     return {
-      id: prev ? prev.id : ("imp_t"+(ti+1)),
+      id: (function(){ var nid=tId(name); while(takenIds[nid]) nid+="x"; takenIds[nid]=1; return nid; })(),
       name: name,
       category: prev ? prev.category : cat,
       venue: prev ? (prev.venue||rws[0].venue||"") : (rws[0].venue||""),
@@ -307,6 +308,7 @@ function calcProfileData(s){
 
 /* ============ STATE & PERSISTENCE ============ */
 let state = { tournaments: SEED, skills: Object.assign({}, DEFAULT_SKILLS), player: Object.assign({}, DEFAULT_PLAYER), profile: null, view:"dashboard", selT:null, statsScope:"all", formWon:null };
+function tId(name){ var h=5381; for(var i=0;i<name.length;i++){ h=(((h<<5)+h)+name.charCodeAt(i))>>>0; } return "t_"+h.toString(36); }
 function saveData(){ try{ localStorage.setItem(LS_DATA, JSON.stringify(state.tournaments)); }catch(e){} }
 function saveSkills(){ try{ localStorage.setItem(LS_SKILLS, JSON.stringify(state.skills)); }catch(e){} }
 function savePlayer(){ try{ localStorage.setItem(LS_PLAYER, JSON.stringify(state.player)); }catch(e){} }
@@ -315,6 +317,16 @@ function loadAll(){
   try{ const s=localStorage.getItem(LS_SKILLS); if(s){ state.skills=Object.assign({}, DEFAULT_SKILLS, JSON.parse(s)); } }catch(e){}
   try{ const p=localStorage.getItem(LS_PLAYER); if(p){ state.player=Object.assign({}, DEFAULT_PLAYER, JSON.parse(p)); } }catch(e){}
   try{ const sc=localStorage.getItem("tt-scope-v1"); if(sc==="all"||sc==="comp"||sc==="fri") state.statsScope=sc; }catch(e){}
+  // Migración: ids de torneo duplicados (imports posicionales antiguos) → reasignar por nombre
+  (function(){
+    var seen={}, broken=false;
+    state.tournaments.forEach(function(t){ if(!t.id||seen[t.id]) broken=true; seen[t.id]=1; });
+    if(broken){
+      var taken={};
+      state.tournaments.forEach(function(t){ var nid=tId(t.name||""); while(taken[nid]) nid+="x"; taken[nid]=1; t.id=nid; });
+      saveData();
+    }
+  })();
   // Migración: sedes por partido + clubs del jugador derivados de sus datos
   var _mig=false;
   state.tournaments.forEach(function(t){ t.matches.forEach(function(m){ if(m.venue===undefined){ m.venue=t.venue||""; _mig=true; } }); });
